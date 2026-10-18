@@ -165,7 +165,8 @@ def run(config_path=ROOT / "tickers.toml", fetch=fetch_chart, today=None, data_d
                 "currency": fresh["currency"] or stored.get("currency", ""),
                 "exchange": fresh["exchange"] or stored.get("exchange", ""),
                 "closes": merge(stored.get("closes"), fresh["closes"]),
-                "dividends": merge(stored.get("dividends"), fresh["dividends"]),
+                # a fresh set replaces the stored one, so dividends Yahoo has since corrected don't linger
+                "dividends": [[d, a] for d, a in sorted(fresh["dividends"].items())] if fresh["dividends"] else stored.get("dividends", []),
             }
             path.write_text(json.dumps(record, separators=(",", ":")), encoding="utf-8")
             print(f"{it['code']:7} {len(record['closes']):5} days  last {record['closes'][-1] if record['closes'] else '-'}")

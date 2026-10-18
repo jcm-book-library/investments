@@ -80,6 +80,18 @@ class RunTest(unittest.TestCase):
             self.assertEqual(index["tickers"]["VAS"]["last"], 100.0)
             self.assertTrue((tmp / "index.json").exists())
 
+    def test_fresh_dividends_replace_stored(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            cfg = tmp / "tickers.toml"
+            cfg.write_text('[[ticker]]\ncode = "VAS"\n', encoding="utf-8")
+            (tmp / "prices").mkdir()
+            (tmp / "prices" / "VAS.json").write_text(json.dumps(
+                {"code": "VAS", "closes": [["2026-06-30", 99.0]], "dividends": [["2026-06-01", 0.5]]}))
+            fp.run(cfg, fetch=lambda s, st: chart([("2026-07-01", 100.0)], divs=[("2026-06-02", 0.6)]), data_dir=tmp, pause=0)
+            vas = json.loads((tmp / "prices" / "VAS.json").read_text())
+            self.assertEqual(vas["dividends"], [["2026-06-02", 0.6]])
+
     def test_repo_config_loads(self):
         start, items = fp.load_config()
         codes = [i["code"] for i in items]

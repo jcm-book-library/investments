@@ -419,7 +419,9 @@ const pct = (n, dp = 1) => n == null || isNaN(n) ? '–' : (n > 0 ? '+' : '') + 
 const cls = n => n > 0 ? 'up' : n < 0 ? 'down' : '';
 const num = v => { const n = typeof v === 'number' ? v : parseFloat(String(v ?? '').replace(/[$,\s]/g, '')); return isNaN(n) ? 0 : n; };
 const todayISO = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const isoLocal = x => { const d = new Date(x); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+const txt = s => /^[=+\-@']|^\d[\d\s\/.,:-]*$/.test(String(s)) && String(s) !== '' ? "'" + s : s;
 const daysBetween = (a, b) => Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 864e5);
 const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
@@ -482,7 +484,7 @@ const RANGES = { '1M': 31, '6M': 183, '1Y': 366, '3Y': 1096, '5Y': 1827, '10Y': 
 function sliceRange(pairs, range, end) {
   if (!pairs.length) return pairs;
   const last = end || pairs[pairs.length - 1][0];
-  const from = new Date(new Date(last + 'T00:00:00') - RANGES[range] * 864e5).toISOString().slice(0, 10);
+  const from = isoLocal(new Date(last + 'T00:00:00') - RANGES[range] * 864e5);
   return pairs.filter(p => p[0] >= from && p[0] <= last);
 }
 function seriesStats(closes, dividends) {
@@ -499,7 +501,7 @@ function seriesStats(closes, dividends) {
   const vol = Math.sqrt(rets.reduce((a, b) => a + (b - mean) ** 2, 0) / Math.max(1, rets.length - 1)) * Math.sqrt(252);
   return {
     priceRet: c1 / c0 - 1, trRet, days,
-    cagr: days >= 365 ? Math.pow(1 + trRet, 365 / days) - 1 : null,
+    cagr: days >= 360 ? Math.pow(1 + trRet, 365 / days) - 1 : null,
     maxDD, ddFrom, ddTo, vol, divTotal: divIn.reduce((a, b) => a + b[1], 0), divCount: divIn.length,
   };
 }
@@ -554,6 +556,13 @@ const G = {
   async append(tab, values) {
     await this.api(`/${this.sheet()}/values/${encodeURIComponent(tab + '!A1')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, { method: 'POST', body: JSON.stringify({ values: [values] }) });
   },
+  // Refuse to touch a row that was edited in the sheet since we loaded it.
+  async check(tab, item) {
+    const range = `${tab}!A${item._row}:${String.fromCharCode(64 + TABS[tab].length)}${item._row}`;
+    const r = await this.api(`/${this.sheet()}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER`);
+    const key = a => JSON.stringify([0, 1].map(i => a?.[i] ?? ''));
+    if (key((r.values || [])[0]) !== key(item._raw)) { await refreshSheet(); throw new Error('That row changed in the sheet since it loaded. Reloaded, so please try again.'); }
+  },
   async update(tab, rowNum, values) {
     const range = `${tab}!A${rowNum}:${String.fromCharCode(64 + values.length)}${rowNum}`;
     await this.api(`/${this.sheet()}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`, { method: 'PUT', body: JSON.stringify({ values: [values] }) });
@@ -578,10 +587,14 @@ function sheetDate(v) {
   m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/); if (m) return `${m[3].length === 2 ? '20' + m[3] : m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
   return s;
 }
+let badDates = null;
 function parseSheet(d) {
-  S.watch = d.Watchlist.map(({ row: r, _row }) => ({ _row, code: String(r[0] || '').trim().toUpperCase(), name: r[1] || '', category: r[2] || '', ethical: /^(y|yes|true|1)$/i.test(String(r[3] ?? '')), status: r[4] || 'Researching', target: r[5] === '' || r[5] == null ? null : num(r[5]), notes: r[6] || '', added: sheetDate(r[7]) })).filter(w => w.code);
-  S.tx = d.Purchases.map(({ row: r, _row }) => ({ _row, date: sheetDate(r[0]), code: String(r[1] || '').trim().toUpperCase(), type: /^s/i.test(String(r[2] || '')) ? 'Sell' : 'Buy', units: num(r[3]), price: num(r[4]), fees: num(r[5]), platform: r[6] || '', notes: r[7] || '' })).filter(t => t.code && t.units > 0);
-  S.res = d.Resources.map(({ row: r, _row }) => ({ _row, title: r[0] || '', url: r[1] || '', category: r[2] || 'Other', notes: r[3] || '' })).filter(x => x.url);
+  S.watch = d.Watchlist.map(({ row: r, _row }) => ({ _row, _raw: r, code: String(r[0] || '').trim().toUpperCase(), name: r[1] || '', category: r[2] || '', ethical: /^(y|yes|true|1)$/i.test(String(r[3] ?? '')), status: r[4] || 'Researching', target: r[5] === '' || r[5] == null ? null : num(r[5]), notes: r[6] || '', added: sheetDate(r[7]) })).filter(w => w.code);
+  S.tx = d.Purchases.map(({ row: r, _row }) => ({ _row, _raw: r, date: sheetDate(r[0]), code: String(r[1] || '').trim().toUpperCase(), type: /^s/i.test(String(r[2] || '')) ? 'Sell' : 'Buy', units: num(r[3]), price: num(r[4]), fees: num(r[5]), platform: r[6] || '', notes: r[7] || '' })).filter(t => t.code && t.units > 0);
+  const bad = S.tx.filter(t => !/^\d{4}-\d{2}-\d{2}$/.test(t.date)).map(t => t._row);
+  S.tx = S.tx.filter(t => !bad.includes(t._row));
+  badDates?.remove(); badDates = bad.length ? notice(`${bad.length} purchase row(s) have a date the app can't read (rows ${bad.join(', ')}). Use a date like 2026-10-18.`, 'warn') : null;
+  S.res = d.Resources.map(({ row: r, _row }) => ({ _row, _raw: r, title: r[0] || '', url: r[1] || '', category: r[2] || 'Other', notes: r[3] || '' })).filter(x => x.url);
 }
 
 function signedOut() {
@@ -635,11 +648,12 @@ async function refreshSheet() {
 }
 async function saveRow(tab, item, values) {
   if (!S.connected) { connect(); throw new Error('Connect your sheet first'); }
-  if (item && item._row) await G.update(tab, item._row, values); else await G.append(tab, values);
+  if (item && item._row) { await G.check(tab, item); await G.update(tab, item._row, values); } else await G.append(tab, values);
   await refreshSheet();
 }
 async function deleteRow(tab, item) {
   if (!S.connected) { connect(); return; }
+  await G.check(tab, item);
   await G.remove(tab, item._row);
   await refreshSheet();
 }
@@ -672,7 +686,7 @@ function computeHoldings(txs = S.tx) {
     return { code: h.code, units, cost, avg: units ? cost / units : 0, price: p, value, gain: value != null ? value - cost : null, lots: h.lots.filter(l => l.left > 1e-9), distributions: estDistributions(h.code, txs) };
   }).filter(r => r.units > 1e-9);
   const value = rows.reduce((a, r) => a + (r.value ?? r.cost), 0), cost = rows.reduce((a, r) => a + r.cost, 0);
-  return { rows, realised, value, cost, gain: value - cost, distributions: rows.reduce((a, r) => a + r.distributions, 0) };
+  return { rows, realised, value, cost, gain: value - cost, distributions: Object.keys(by).reduce((a, c) => a + estDistributions(c, txs), 0) };
 }
 // You're entitled to a distribution if you held units the day before its ex-date.
 function estDistributions(code, txs) {
@@ -748,7 +762,7 @@ $('wlForm').addEventListener('submit', async e => {
   const f = e.target; e.preventDefault();
   const code = f.code.value.trim().toUpperCase(), w = S.watch.find(x => x.code === $('wlDlg').dataset.code);
   if (!w && S.watch.some(x => x.code === code)) { $('wlDlgMsg').textContent = code + ' is already on your watchlist.'; return; }
-  const vals = [code, f.name.value.trim() || tick(code)?.name || '', f.category.value.trim(), f.ethical.checked ? 'Yes' : '', f.status.value, f.target.value, f.notes.value.trim(), w?.added || todayISO()];
+  const vals = [code, txt(f.name.value.trim() || tick(code)?.name || ''), txt(f.category.value.trim()), f.ethical.checked ? 'Yes' : '', f.status.value, f.target.value, txt(f.notes.value.trim()), w?.added || todayISO()];
   try { await saveRow('Watchlist', w, vals); $('wlDlg').close(); toast('Saved ' + code + (tick(code) ? '' : '. Add it to tickers.toml to get its prices.')); }
   catch (err) { $('wlDlgMsg').textContent = err.message; }
 });
@@ -860,7 +874,7 @@ async function renderChart() {
       plugins: {
         legend: { display: datasets.length > 1, labels: { usePointStyle: true, boxWidth: 8 } },
         tooltip: { callbacks: {
-          title: items => fmtDate(new Date(items[0].parsed.x).toISOString().slice(0, 10)),
+          title: items => fmtDate(isoLocal(items[0].parsed.x)),
           label: c => c.raw.t ? `${c.raw.t.type} ${c.raw.t.units} @ ${aud(c.raw.t.price)}` : `${c.dataset.label}: ${yfmt(c.parsed.y)}`,
         } },
       },
@@ -950,7 +964,7 @@ function txTotal() { const f = $('txForm'), u = num(f.units.value), p = num(f.pr
 $('txForm').addEventListener('input', txTotal);
 $('txForm').addEventListener('submit', async e => {
   e.preventDefault(); const f = e.target, t = S.tx.find(x => String(x._row) === $('txDlg').dataset.row);
-  const vals = [f.date.value, f.code.value.trim().toUpperCase(), f.type.value, num(f.units.value), num(f.price.value), num(f.fees.value), f.platform.value.trim(), f.notes.value.trim()];
+  const vals = [f.date.value, f.code.value.trim().toUpperCase(), f.type.value, num(f.units.value), num(f.price.value), num(f.fees.value), txt(f.platform.value.trim()), txt(f.notes.value.trim())];
   try { await saveRow('Purchases', t, vals); $('txDlg').close(); toast('Saved'); } catch (err) { $('txTotal').textContent = err.message; }
 });
 $('txDelete').addEventListener('click', async () => {
@@ -968,7 +982,7 @@ function renderResources() {
   $('resCatList').innerHTML = keys.map(k => `<option value="${esc(k)}">`).join('');
   const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } };
   $('resBody').innerHTML = (S.connected ? '' : '<p class="small muted">These are the links from your coaching email. Connect your sheet to add your own, edit or remove them.</p>')
-    + keys.map(k => `<h3 style="margin:18px 0 10px">${esc(k)}</h3><div class="links">${groups[k].map(r => `<div style="position:relative"><a class="link" href="${esc(r.url)}" target="_blank" rel="noopener"><b>${esc(r.title)}</b><span class="host">${esc(host(r.url))}</span>${r.notes ? `<div class="small" style="margin-top:4px">${esc(r.notes)}</div>` : ''}</a>${r._row ? `<button class="btn ghost small" data-res="${r._row}" style="position:absolute;top:6px;right:6px" aria-label="Edit ${esc(r.title)}">Edit</button>` : ''}</div>`).join('')}</div>`).join('')
+    + keys.map(k => `<h3 style="margin:18px 0 10px">${esc(k)}</h3><div class="links">${groups[k].map(r => `<div style="position:relative"><${/^https?:\/\//i.test(r.url) ? `a class="link" href="${esc(r.url)}" target="_blank" rel="noopener"` : 'div class="link"'}><b>${esc(r.title)}</b><span class="host">${esc(host(r.url))}</span>${r.notes ? `<div class="small" style="margin-top:4px">${esc(r.notes)}</div>` : ''}</${/^https?:\/\//i.test(r.url) ? 'a' : 'div'}>${r._row ? `<button class="btn ghost small" data-res="${r._row}" style="position:absolute;top:6px;right:6px" aria-label="Edit ${esc(r.title)}">Edit</button>` : ''}</div>`).join('')}</div>`).join('')
     + `<div class="notice" style="margin-top:18px"><b>Comparing platforms?</b> Questions worth asking: brokerage per trade, whether you hold shares in your own name (CHESS-sponsored, with your own HIN) or the platform holds them for you (custodial), ASX vs US access, auto-invest options and minimum amounts.</div>`;
 }
 function openRes(row) {
@@ -981,7 +995,8 @@ function openRes(row) {
 }
 $('resForm').addEventListener('submit', async e => {
   e.preventDefault(); const f = e.target, r = S.res.find(x => String(x._row) === $('resDlg').dataset.row);
-  try { await saveRow('Resources', r, [f.title.value.trim(), f.url.value.trim(), f.category.value.trim() || 'Other', f.notes.value.trim()]); $('resDlg').close(); } catch (err) { toast(err.message); }
+  const url = f.url.value.trim(); if (!/^https?:\/\//i.test(url)) { toast('The link must start with http:// or https://'); return; }
+  try { await saveRow('Resources', r, [txt(f.title.value.trim()), url, txt(f.category.value.trim() || 'Other'), txt(f.notes.value.trim())]); $('resDlg').close(); } catch (err) { toast(err.message); }
 });
 $('resDelete').addEventListener('click', async () => {
   const r = S.res.find(x => String(x._row) === $('resDlg').dataset.row); if (!r || !confirm('Delete this link?')) return;
@@ -1026,7 +1041,7 @@ async function renderDCA() {
     ] },
     options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false },
       scales: { x: { type: 'linear', ticks: { maxTicksLimit: 6, callback: v => new Date(v).getFullYear() }, grid: { display: false } }, y: { ticks: { callback: v => '$' + (v >= 1000 ? Math.round(v / 1000) + 'k' : v) } } },
-      plugins: { legend: { labels: { boxWidth: 10 } }, tooltip: { callbacks: { title: i => fmtDate(new Date(i[0].parsed.x).toISOString().slice(0, 10)), label: c => `${c.dataset.label}: ${aud(c.parsed.y, 0)}` } } } },
+      plugins: { legend: { labels: { boxWidth: 10 } }, tooltip: { callbacks: { title: i => fmtDate(isoLocal(i[0].parsed.x)), label: c => `${c.dataset.label}: ${aud(c.parsed.y, 0)}` } } } },
   });
 }
 function renderCompound() {
@@ -1041,7 +1056,7 @@ function renderCompound() {
   cgChart = new Chart($('cgChart'), {
     type: 'bar', data: { labels: rows.map(x => x[0]), datasets: [
       { label: 'Money put in', data: rows.map(x => x[1]), backgroundColor: col[4] },
-      { label: 'Growth', data: rows.map(x => Math.max(0, x[2] - x[1])), backgroundColor: col[0] },
+      { label: 'Growth', data: rows.map(x => x[2] - x[1]), backgroundColor: col[0] },
     ] },
     options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { x: { stacked: true, grid: { display: false }, title: { display: true, text: 'Years' } }, y: { stacked: true, ticks: { callback: v => '$' + (v >= 1000 ? Math.round(v / 1000) + 'k' : v) } } }, plugins: { legend: { labels: { boxWidth: 10 } }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${aud(c.parsed.y, 0)}` } } } },
   });
