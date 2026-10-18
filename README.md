@@ -3,7 +3,7 @@
 My investment watchlist, ETF price history, holdings and learning notes. It's a separate job from the budget app. If the two merge later, both read Google Sheets, so they can share a sheet.
 
 - **Live site:** https://jcm-book-library.github.io/investments/
-- **My data:** the Google Sheet "Investment Tracker" (private, in my Drive), with these tabs:
+- **My data:** my investments Google Sheet (private, in my Drive; ID set as `DEFAULT_SHEET` in `index.html`), with these tabs:
   - **Watchlist:** Code, Name, Category, Ethical, Status, Target price, Notes, Added
   - **Purchases:** Date, Code, Type (Buy/Sell), Units, Price, Fees, Platform, Notes
   - **Resources:** Title, URL, Category, Notes
