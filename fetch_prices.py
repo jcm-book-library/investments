@@ -49,6 +49,37 @@ def yahoo_symbol(code):
     return code if any(ch in code for ch in ".^=") else code + ".AX"
 
 
+def fetch_yfinance(symbol, start):
+    """Primary source: the yfinance library, which handles Yahoo's cookie/crumb sign-in and
+    browser impersonation. Plain requests from GitHub's runners get HTTP 429."""
+    import yfinance as yf  # imported here so the tests and the fallback don't need it
+    t = yf.Ticker(symbol)
+    hist = t.history(start=start, interval="1d", auto_adjust=False, actions=True, raise_errors=True)
+    if hist is None or hist.empty:
+        raise RuntimeError("no data returned")
+    meta = t.history_metadata or {}
+    closes, divs = {}, {}
+    for ts, row in hist.iterrows():
+        d = ts.date().isoformat()  # index is already in the exchange's time zone
+        if row.get("Close") == row.get("Close") and row["Close"] > 0:  # skip NaN
+            closes[d] = round(float(row["Close"]), 4)
+        if row.get("Dividends", 0):
+            divs[d] = round(float(row["Dividends"]), 6)
+    return {"name": meta.get("longName") or meta.get("shortName") or "", "currency": meta.get("currency") or "",
+            "exchange": meta.get("fullExchangeName") or meta.get("exchangeName") or "", "closes": closes, "dividends": divs}
+
+
+def fetch_any(symbol, start):
+    """Try yfinance, then Yahoo's chart API directly."""
+    try:
+        return fetch_yfinance(symbol, start)
+    except ImportError:
+        pass
+    except Exception as e:
+        print(f"  yfinance failed for {symbol}: {e}; trying the chart API", file=sys.stderr)
+    return parse_chart(fetch_chart(symbol, start))
+
+
 def fetch_chart(symbol, start):
     """Return Yahoo's chart JSON for symbol, trying both API hosts with a short backoff."""
     p1 = int(dt.datetime.fromisoformat(start).replace(tzinfo=dt.timezone.utc).timestamp())
@@ -148,7 +179,7 @@ def summarise(closes, dividends):
     return out
 
 
-def run(config_path=ROOT / "tickers.toml", fetch=fetch_chart, today=None, data_dir=DATA, pause=0.5):
+def run(config_path=ROOT / "tickers.toml", fetch=fetch_any, today=None, data_dir=DATA, pause=0.5):
     start, items = load_config(config_path)
     prices = Path(data_dir) / "prices"
     prices.mkdir(parents=True, exist_ok=True)
@@ -161,7 +192,8 @@ def run(config_path=ROOT / "tickers.toml", fetch=fetch_chart, today=None, data_d
         try:
             if misses >= 3:
                 raise RuntimeError("skipped: price source unreachable this run")
-            fresh = parse_chart(fetch(it["symbol"], start))
+            got = fetch(it["symbol"], start)
+            fresh = got if "closes" in got else parse_chart(got)  # fetchers return parsed data or raw chart JSON
             record = {
                 "code": it["code"], "symbol": it["symbol"],
                 "name": fresh["name"] or stored.get("name") or it["name"],
