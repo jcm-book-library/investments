@@ -1,0 +1,135 @@
+# Which prices the daily job downloads.
+#
+# Add a ticker here and its full price history appears in the app after the next
+# run (Actions → "Update prices" → Run workflow, or wait for the 6pm weekday run).
+# ASX codes need no suffix: "VAS" is fetched as VAS.AX. For anything not on the
+# ASX (a US share, an index), add `yahoo = "..."` with its Yahoo Finance symbol,
+# e.g. code = "AAPL", yahoo = "AAPL".
+#
+# name/category/ethical are only a starting point. Your Google Sheet's Watchlist
+# tab is where you keep your own notes, status and categories.
+
+history_from = "2000-01-01"
+
+# ---- From the coaching email -------------------------------------------------
+
+[[ticker]]
+code = "VAS"
+name = "Vanguard Australian Shares Index ETF"
+category = "Australian shares"
+
+[[ticker]]
+code = "IVV"
+name = "iShares S&P 500 ETF"
+category = "US shares"
+
+[[ticker]]
+code = "SPY"
+name = "SPDR S&P 500 ETF Trust"
+category = "US shares"
+
+[[ticker]]
+code = "VDHG"
+name = "Vanguard Diversified High Growth Index ETF"
+category = "Diversified"
+
+[[ticker]]
+code = "VGS"
+name = "Vanguard MSCI Index International Shares ETF"
+category = "Global shares"
+
+[[ticker]]
+code = "VTS"
+name = "Vanguard US Total Market Shares Index ETF"
+category = "US shares"
+
+[[ticker]]
+code = "V500"
+name = "Vanguard S&P 500 US Shares Index ETF"
+category = "US shares"
+
+[[ticker]]
+code = "GXAI"
+name = "Global X Artificial Intelligence ETF"
+category = "Thematic: tech & AI"
+
+[[ticker]]
+code = "SEMI"
+name = "Global X Semiconductor ETF"
+category = "Thematic: tech & AI"
+
+[[ticker]]
+code = "AINF"
+name = "Global X AI Infrastructure ETF"
+category = "Thematic: tech & AI"
+
+[[ticker]]
+code = "HACK"
+name = "Betashares Global Cybersecurity ETF"
+category = "Thematic: tech & AI"
+
+[[ticker]]
+code = "RBTZ"
+name = "Betashares Global Robotics and Artificial Intelligence ETF"
+category = "Thematic: tech & AI"
+
+[[ticker]]
+code = "NDQ"
+name = "Betashares Nasdaq 100 ETF"
+category = "US shares"
+
+# ---- "Ethical" ETFs from the email -------------------------------------------
+
+[[ticker]]
+code = "VETH"
+name = "Vanguard Ethically Conscious Australian Shares ETF"
+category = "Australian shares"
+ethical = true
+
+[[ticker]]
+code = "GIVE"
+name = "Perpetual ESG Australian Share Fund"
+category = "Australian shares"
+ethical = true
+
+[[ticker]]
+code = "IESG"
+name = "iShares Core MSCI Australia ESG ETF"
+category = "Australian shares"
+ethical = true
+
+[[ticker]]
+code = "INES"
+name = "Intelligent Investor Ethical Share Fund"
+category = "Australian shares"
+ethical = true
+
+[[ticker]]
+code = "FAIR"
+name = "Betashares Australian Sustainability Leaders ETF"
+category = "Australian shares"
+ethical = true
+
+[[ticker]]
+code = "ERTH"
+name = "Betashares Climate Change Innovation ETF"
+category = "Thematic: climate"
+ethical = true
+
+[[ticker]]
+code = "VESG"
+name = "Vanguard Ethically Conscious International Shares ETF"
+category = "Global shares"
+ethical = true
+
+# ---- Market yardsticks (shown on the Overview and in Compare) ----------------
+
+[[benchmark]]
+code = "ASX200"
+yahoo = "^AXJO"
+name = "S&P/ASX 200 index"
+
+[[benchmark]]
+code = "SP500"
+yahoo = "^GSPC"
+name = "S&P 500 index (US$)"

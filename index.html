@@ -1,0 +1,1229 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1613">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Compound">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Compound</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Figtree:wght@400;500;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#f5f7f4; --surface:#ffffff; --raise:#eef2ed; --line:#dbe3dc;
+  --fg:#15211c; --muted:#5d6d65; --accent:#1d7a57; --accent-soft:#dff1e8; --accent-ink:#ffffff;
+  --up:#1d7a57; --down:#c0392b; --warn:#a86b00;
+  --s1:#1d7a57; --s2:#3a6fd8; --s3:#c2662d; --s4:#8a4fbf; --s5:#7a8a82;
+  --display:"Fraunces",Georgia,serif;
+  --body:"Figtree",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1613; --surface:#16201c; --raise:#1e2b26; --line:#2a3a33;
+  --fg:#e8f0eb; --muted:#93a59c; --accent:#5fd19d; --accent-soft:#1d3a2e; --accent-ink:#0b1a13;
+  --up:#5fd19d; --down:#ff8a7a; --warn:#f0b54a;
+  --s1:#5fd19d; --s2:#7fa6ff; --s3:#f29a5e; --s4:#c49bff; --s5:#93a59c;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1613; --surface:#16201c; --raise:#1e2b26; --line:#2a3a33;
+  --fg:#e8f0eb; --muted:#93a59c; --accent:#5fd19d; --accent-soft:#1d3a2e; --accent-ink:#0b1a13;
+  --up:#5fd19d; --down:#ff8a7a; --warn:#f0b54a;
+  --s1:#5fd19d; --s2:#7fa6ff; --s3:#f29a5e; --s4:#c49bff; --s5:#93a59c;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--body);margin:0}
+a{color:var(--accent)}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 16px 40px}
+h1,h2,h3{font-family:var(--display);letter-spacing:-.01em;margin:0}
+h2{font-size:20px} h3{font-size:16px}
+.muted{color:var(--muted)} .small{font-size:13px} .tnum{font-variant-numeric:tabular-nums}
+.up{color:var(--up)} .down{color:var(--down)}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:700}
+
+header.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand img{width:40px;height:40px;border-radius:10px}
+.brand h1{font-size:26px}
+.status{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+@media (max-width:600px){.status .sep{flex-basis:100%;height:0;overflow:hidden}}
+.dot.ok{background:var(--up)} .dot.err{background:var(--down)}
+
+nav.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:18px;scrollbar-width:none}
+nav.tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);font:600 14px var(--body);padding:10px 12px;cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--fg);border-color:var(--accent)}
+section.tab{display:none} section.tab.on{display:block}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.card>h2,.card>h3{margin-bottom:10px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+.kpi .v{font:700 24px/1.2 var(--body);font-variant-numeric:tabular-nums;margin-top:4px}
+.kpi .s{font-size:13px;color:var(--muted)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spacer{flex:1}
+
+button.btn,a.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:600 14px var(--body);padding:8px 14px;border-radius:10px;cursor:pointer;text-decoration:none;min-height:38px}
+button.btn.primary,a.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.btn.ghost{background:none;border-color:transparent;padding:6px 8px;min-height:32px}
+button.btn.danger{color:var(--down)}
+button.btn:focus-visible,nav.tabs button:focus-visible,.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:5px 12px;font:600 13px var(--body);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--raise);color:var(--muted);white-space:nowrap}
+.badge.eth{background:var(--accent-soft);color:var(--accent)}
+.badge.hold{background:var(--accent);color:var(--accent-ink)}
+.badge.warn{color:var(--warn)}
+
+input,select,textarea{font:15px var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 10px;min-height:38px;max-width:100%}
+textarea{min-height:80px;width:100%;resize:vertical}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;color:var(--muted)}
+label.f input,label.f select{width:100%}
+.form{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.form .full{grid-column:1/-1}
+
+.tablewrap{overflow-x:auto;margin:0 -16px;padding:0 16px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle;white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+td.n,th.n{text-align:right}
+td.wide{white-space:normal;min-width:160px}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--raise)}
+.code{font-weight:700;letter-spacing:.02em}
+.spark{display:block}
+
+.notice{border:1px solid var(--line);border-left:4px solid var(--accent);background:var(--surface);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:14px}
+.notice.err{border-left-color:var(--down)} .notice.warn{border-left-color:var(--warn)}
+.empty{padding:26px 10px;text-align:center;color:var(--muted)}
+
+.chartbox{position:relative;height:340px}
+@media (max-width:600px){.chartbox{height:260px}}
+.stats{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-top:14px}
+.stat{background:var(--raise);border-radius:10px;padding:10px 12px}
+.stat .l{font-size:12px;color:var(--muted);font-weight:600}
+.stat .v{font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}
+.help{cursor:help;border-bottom:1px dotted var(--muted)}
+
+.learn details{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:10px}
+.learn summary{cursor:pointer;padding:14px 16px;font:700 16px var(--display);list-style:none;display:flex;align-items:center;gap:10px}
+.learn summary::-webkit-details-marker{display:none}
+.learn summary::before{content:"+";font:700 18px var(--body);color:var(--accent);width:16px}
+.learn details[open] summary::before{content:"–"}
+.learn .body{padding:0 16px 14px 42px;max-width:760px}
+.learn .body p,.learn .body li{margin:0 0 8px}
+.learn .body ul{padding-left:18px;margin:0 0 8px}
+.callout{background:var(--accent-soft);border-radius:10px;padding:10px 12px;margin:8px 0}
+
+.links{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.link{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-decoration:none;color:var(--fg)}
+.link:hover{border-color:var(--accent)}
+.link b{display:block;color:var(--accent)}
+.link .host{font-size:12px;color:var(--muted)}
+
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--fg);padding:20px;width:min(560px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h2{margin-bottom:12px}
+.dlg-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:9;max-width:calc(100vw - 32px);display:none}
+footer{margin-top:30px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <img src="icons/mark.svg" alt="">
+      <div><h1>Compound</h1><div class="small muted">Watchlist, price history &amp; notes</div></div>
+    </div>
+    <div class="status">
+      <span class="dot" id="priceDot"></span><span id="priceStatus">Loading prices…</span>
+      <span class="sep">·</span>
+      <span class="dot" id="sheetDot"></span><span id="sheetStatus">Sheet not connected</span>
+      <button class="btn" id="connectBtn">Connect</button>
+      <button class="btn ghost" id="settingsBtn" aria-label="Settings">⚙︎</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+    <button role="tab" data-tab="watchlist">Watchlist</button>
+    <button role="tab" data-tab="charts">Charts</button>
+    <button role="tab" data-tab="holdings">Holdings</button>
+    <button role="tab" data-tab="learn">Learn</button>
+    <button role="tab" data-tab="resources">Resources</button>
+  </nav>
+
+  <div id="notices"></div>
+
+  <!-- ============ OVERVIEW ============ -->
+  <section class="tab on" id="tab-overview">
+    <div id="startCard"></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="grid g2" style="margin-top:14px">
+      <div class="card"><h2>Markets</h2><div id="markets"></div></div>
+      <div class="card"><h2>Watchlist movers <span class="small muted">past month</span></h2><div id="movers"></div></div>
+    </div>
+  </section>
+
+  <!-- ============ WATCHLIST ============ -->
+  <section class="tab" id="tab-watchlist">
+    <div class="row" style="margin-bottom:12px">
+      <input id="wlSearch" type="search" placeholder="Search code or name" aria-label="Search watchlist" style="flex:1;min-width:160px">
+      <select id="wlCat" aria-label="Category"></select>
+      <select id="wlStatus" aria-label="Status"></select>
+      <button class="chip" id="wlEth" aria-pressed="false">Ethical only</button>
+      <button class="btn primary" id="wlAdd">+ Add</button>
+    </div>
+    <div class="card">
+      <div class="tablewrap"><table>
+        <thead><tr><th>Code</th><th>Name</th><th>Status</th><th class="n">Price</th><th class="n">1M</th><th class="n">1Y</th><th class="n">5Y</th><th class="n"><span class="help" title="Distributions paid over the last 12 months as a share of today's price. Past payouts, not a promise.">Yield</span></th><th>Past year</th><th></th></tr></thead>
+        <tbody id="wlBody"></tbody>
+      </table></div>
+    </div>
+    <p class="small muted">Returns are price-only (distributions not included). Click a row to chart it. <span id="sameIndex"></span></p>
+  </section>
+
+  <!-- ============ CHARTS ============ -->
+  <section class="tab" id="tab-charts">
+    <div class="card">
+      <div class="row" style="margin-bottom:10px">
+        <select id="chTicker" aria-label="Ticker"></select>
+        <select id="chCompare" aria-label="Compare with"><option value="">+ Compare with…</option></select>
+        <span id="chCompareChips" class="row"></span>
+        <span class="spacer"></span>
+        <span class="row" id="chRange"></span>
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <button class="chip" data-mode="price" aria-pressed="true">Price</button>
+        <button class="chip" data-mode="growth" aria-pressed="false">Growth of $10,000 (with distributions)</button>
+        <span class="small muted" id="chHint"></span>
+      </div>
+      <div class="chartbox"><canvas id="chart"></canvas></div>
+      <div class="stats" id="chStats"></div>
+    </div>
+    <div class="grid g2" style="margin-top:14px">
+      <div class="card" id="chPosition"></div>
+      <div class="card" id="chNotes"></div>
+    </div>
+  </section>
+
+  <!-- ============ HOLDINGS ============ -->
+  <section class="tab" id="tab-holdings">
+    <div class="row" style="margin-bottom:12px">
+      <h2>Holdings</h2><span class="spacer"></span>
+      <button class="btn primary" id="txAdd">+ Log a purchase or sale</button>
+    </div>
+    <div class="kpis" id="hKpis"></div>
+    <div class="grid g2" style="margin-top:14px">
+      <div class="card"><h3>By investment</h3><div class="tablewrap"><table>
+        <thead><tr><th>Code</th><th class="n">Units</th><th class="n">Avg cost</th><th class="n">Value</th><th class="n">Gain</th><th class="n">Share</th></tr></thead>
+        <tbody id="hBody"></tbody></table></div></div>
+      <div class="card"><h3>Mix by category</h3><div class="chartbox" style="height:260px"><canvas id="mixChart"></canvas></div></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>Parcels <span class="small muted">each purchase, oldest sold first</span></h3>
+      <p class="small muted" style="margin:0 0 8px">Selling a parcel you've held for more than 12 months may qualify for the 50% CGT discount. See the Learn tab and the ATO for the rules.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Bought</th><th>Code</th><th class="n">Units left</th><th class="n">Cost</th><th class="n">Value</th><th class="n">Gain</th><th>Held</th></tr></thead>
+        <tbody id="lotBody"></tbody></table></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>Transactions</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Date</th><th>Code</th><th>Type</th><th class="n">Units</th><th class="n">Price</th><th class="n">Fees</th><th class="n">Total</th><th>Platform</th><th>Notes</th><th></th></tr></thead>
+        <tbody id="txBody"></tbody></table></div>
+    </div>
+    <div class="card" style="margin-top:14px" id="realised"></div>
+  </section>
+
+  <!-- ============ LEARN ============ -->
+  <section class="tab learn" id="tab-learn">
+    <div class="grid g2" style="margin-bottom:16px">
+      <div class="card">
+        <h3>Try it: regular investing with real history</h3>
+        <p class="small muted" style="margin:0 0 10px">What would have happened if you'd put the same amount in on the first trading day of every month? Uses the real prices below, reinvests distributions, and ignores brokerage and tax.</p>
+        <div class="form">
+          <label class="f">Investment<select id="dcaTicker"></select></label>
+          <label class="f">Each month ($)<input id="dcaAmt" type="number" min="1" value="500"></label>
+          <label class="f">Starting<select id="dcaStart"></select></label>
+        </div>
+        <div class="stats" id="dcaOut"></div>
+        <div class="chartbox" style="height:220px;margin-top:10px"><canvas id="dcaChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Try it: how compounding grows</h3>
+        <p class="small muted" style="margin:0 0 10px">An assumed steady return, to show the shape of compounding. Real markets go up and down. This is not a forecast.</p>
+        <div class="form">
+          <label class="f">Start with ($)<input id="cgStart" type="number" min="0" value="1000"></label>
+          <label class="f">Add each month ($)<input id="cgMonthly" type="number" min="0" value="300"></label>
+          <label class="f">Years<input id="cgYears" type="number" min="1" max="60" value="20"></label>
+          <label class="f">Assumed return / yr (%)<input id="cgRate" type="number" step="0.5" value="7"></label>
+        </div>
+        <div class="stats" id="cgOut"></div>
+        <div class="chartbox" style="height:220px;margin-top:10px"><canvas id="cgChart"></canvas></div>
+      </div>
+    </div>
+    <div id="learnBody"></div>
+  </section>
+
+  <!-- ============ RESOURCES ============ -->
+  <section class="tab" id="tab-resources">
+    <div class="row" style="margin-bottom:12px">
+      <h2>Resources</h2><span class="spacer"></span>
+      <button class="btn primary" id="resAdd">+ Add a link</button>
+    </div>
+    <div id="resBody"></div>
+  </section>
+
+  <footer>
+    For tracking and learning only. Nothing here is financial advice. Prices come from Yahoo Finance once each weekday evening; they can be delayed or wrong, so check with your platform before trading.
+    <span id="footUpdated"></span>
+  </footer>
+</div>
+
+<!-- Watchlist item -->
+<dialog id="wlDlg"><form method="dialog" id="wlForm">
+  <h2 id="wlDlgTitle">Add to watchlist</h2>
+  <div class="form">
+    <label class="f">Code<input name="code" required maxlength="12" autocapitalize="characters" placeholder="e.g. VAS"></label>
+    <label class="f">Status<select name="status"></select></label>
+    <label class="f full">Name<input name="name" placeholder="Filled in from the price data if left blank"></label>
+    <label class="f">Category<input name="category" list="catList"></label>
+    <label class="f">Target price ($)<input name="target" type="number" step="0.01" min="0"></label>
+    <label class="f" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" name="ethical" style="min-height:auto"> Ethical / ESG</label>
+    <label class="f full">Notes<textarea name="notes" placeholder="Why it's on the list, fees, what it holds, questions to answer…"></textarea></label>
+  </div>
+  <p class="small muted" id="wlDlgMsg"></p>
+  <div class="dlg-actions">
+    <button type="button" class="btn danger" id="wlDelete" hidden>Remove</button>
+    <span class="spacer"></span>
+    <button type="button" class="btn" data-close>Cancel</button>
+    <button class="btn primary" value="save">Save</button>
+  </div>
+</form></dialog>
+
+<!-- Transaction -->
+<dialog id="txDlg"><form method="dialog" id="txForm">
+  <h2 id="txDlgTitle">Log a purchase</h2>
+  <div class="form">
+    <label class="f">Date<input name="date" type="date" required></label>
+    <label class="f">Type<select name="type"><option>Buy</option><option>Sell</option></select></label>
+    <label class="f">Code<input name="code" required list="codeList" autocapitalize="characters"></label>
+    <label class="f">Units<input name="units" type="number" step="any" min="0" required></label>
+    <label class="f">Price per unit ($)<input name="price" type="number" step="any" min="0" required></label>
+    <label class="f">Brokerage / fees ($)<input name="fees" type="number" step="any" min="0" value="0"></label>
+    <label class="f">Platform<input name="platform" list="platList"></label>
+    <label class="f full">Notes<input name="notes"></label>
+  </div>
+  <p class="small muted" id="txTotal"></p>
+  <div class="dlg-actions">
+    <button type="button" class="btn danger" id="txDelete" hidden>Delete</button>
+    <span class="spacer"></span>
+    <button type="button" class="btn" data-close>Cancel</button>
+    <button class="btn primary" value="save">Save</button>
+  </div>
+</form></dialog>
+
+<!-- Resource -->
+<dialog id="resDlg"><form method="dialog" id="resForm">
+  <h2 id="resDlgTitle">Add a link</h2>
+  <div class="form">
+    <label class="f full">Title<input name="title" required></label>
+    <label class="f full">Web address<input name="url" type="url" required placeholder="https://"></label>
+    <label class="f">Group<input name="category" list="resCatList"></label>
+    <label class="f full">Notes<input name="notes"></label>
+  </div>
+  <div class="dlg-actions">
+    <button type="button" class="btn danger" id="resDelete" hidden>Delete</button>
+    <span class="spacer"></span>
+    <button type="button" class="btn" data-close>Cancel</button>
+    <button class="btn primary" value="save">Save</button>
+  </div>
+</form></dialog>
+
+<!-- Settings -->
+<dialog id="setDlg"><form method="dialog" id="setForm">
+  <h2>Settings</h2>
+  <div class="form">
+    <label class="f full">Google Sheet (web address or ID)<input name="sheet" placeholder="https://docs.google.com/spreadsheets/d/…"></label>
+    <label class="f full">Google OAuth Client ID<input name="client" placeholder="…apps.googleusercontent.com"></label>
+    <label class="f">Theme<select name="theme"><option value="">Match device</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+  </div>
+  <p class="small muted">The Client ID is shared with Jackets &amp; Manuscripts on this site, so if you've connected that app here you won't need to enter it again. Your sheet's tabs (Watchlist, Purchases, Resources) are created automatically the first time you connect.</p>
+  <p class="small"><a id="openSheet" target="_blank" rel="noopener">Open the sheet in Google Sheets ↗</a></p>
+  <div class="dlg-actions">
+    <button type="button" class="btn" id="newSheet">Create a new sheet</button>
+    <span class="spacer"></span>
+    <button type="button" class="btn" data-close>Cancel</button>
+    <button class="btn primary" value="save">Save</button>
+  </div>
+</form></dialog>
+
+<datalist id="catList"></datalist><datalist id="codeList"></datalist><datalist id="platList"></datalist><datalist id="resCatList"></datalist>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ======================================================================
+   Compound: watchlist, price history, holdings and learning notes.
+   Prices: data/index.json + data/prices/<CODE>.json, written by fetch_prices.py.
+   Your own data: a Google Sheet with Watchlist, Purchases and Resources tabs.
+   ====================================================================== */
+const DEFAULT_SHEET = '1eV4XpOKxM_N-yiBJn8tgbGTh913Yhn-MhZcgQaFfz_4'; // "Investment Tracker" in Google Drive
+const REPO = 'jcm-book-library/investments';
+const STATUSES = ['Researching', 'Watching', 'Ready to buy', 'Holding', 'Passed'];
+const TABS = {
+  Watchlist: ['Code', 'Name', 'Category', 'Ethical', 'Status', 'Target price', 'Notes', 'Added'],
+  Purchases: ['Date', 'Code', 'Type', 'Units', 'Price', 'Fees', 'Platform', 'Notes'],
+  Resources: ['Title', 'URL', 'Category', 'Notes'],
+};
+const DEFAULT_RESOURCES = [
+  ['Pay calculator', 'https://paycalculator.com.au/', 'Tools', 'Take-home pay after tax, super and salary sacrifice'],
+  ['List of ASX ETFs', 'https://www.marketindex.com.au/asx-etfs', 'Research', 'Market Index: every ETF on the ASX with fees and returns'],
+  ['ASX', 'https://www.asx.com.au/', 'Research', 'Australian Securities Exchange: prices, announcements, education'],
+  ['Betashares Direct', 'https://direct.betashares.com.au/', 'Platforms', ''],
+  ['Vanguard Personal Investor', 'https://www.vanguard.com.au/personal/invest-with-us/etf', 'Platforms', "Vanguard's investment options"],
+  ['Moomoo Australia', 'https://www.moomoo.com/au', 'Platforms', 'Shares, ETFs, options'],
+  ['Stake', 'https://hellostake.com/au', 'Platforms', 'ASX and US shares'],
+  ['Sharesies Australia', 'https://www.sharesies.com.au/', 'Platforms', 'Long-term investing, small amounts'],
+  ["She's on the Money", 'https://www.shesonthemoney.com.au/', 'Podcasts & newsletters', 'Podcast'],
+  ['Money, Money, Money with Glen James', 'https://podcasts.apple.com/podcast/id1384819415', 'Podcasts & newsletters', 'Podcast (formerly My Millennial Money)'],
+  ['Stockhead', 'https://stockhead.com.au/', 'Podcasts & newsletters', 'Email newsletter on ASX small caps and markets'],
+  ['Capital gains tax', 'https://www.ato.gov.au/individuals-and-families/investments-and-assets/capital-gains-tax', 'Tax', 'ATO'],
+  ['Carry-forward concessional contributions & total super balance', 'https://www.ato.gov.au/individuals/super/growing-and-keeping-track-of-your-super/caps-limits-and-tax-on-super-contributions/total-superannuation-balance/', 'Super', 'ATO. Your own figures are in myGov → ATO → Super → Information'],
+  ['Concessional contributions cap', 'https://www.ato.gov.au/individuals-and-families/super-for-individuals-and-families/super/growing-and-keeping-track-of-your-super/caps-limits-and-tax-on-super-contributions/concessional-contributions-cap', 'Super', 'ATO'],
+  ['Notice of intent to claim a deduction for personal super contributions', 'https://www.ato.gov.au/forms-and-instructions/notice-of-intent-to-claim-or-vary-a-deduction-for-personal-super-contributions', 'Super', 'ATO form. Lodge it with your fund before you claim the deduction'],
+  ['Super Projection Calculator', 'https://www.australiansuper.com/tools-and-advice/calculators/super-projection-calculator', 'Super', 'AustralianSuper'],
+];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+const aud = (n, dp = 2) => n == null || isNaN(n) ? '–' : (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('en-AU', { minimumFractionDigits: dp, maximumFractionDigits: dp });
+const money = (n, cur) => cur && cur !== 'AUD' ? aud(n).replace('$', cur === 'USD' ? 'US$' : cur + ' ') : aud(n);
+const pct = (n, dp = 1) => n == null || isNaN(n) ? '–' : (n > 0 ? '+' : '') + (n * 100).toFixed(dp) + '%';
+const cls = n => n > 0 ? 'up' : n < 0 ? 'down' : '';
+const num = v => { const n = typeof v === 'number' ? v : parseFloat(String(v ?? '').replace(/[$,\s]/g, '')); return isNaN(n) ? 0 : n; };
+const todayISO = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+const daysBetween = (a, b) => Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 864e5);
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+function toast(msg, ms = 3200) { const t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = 'none', ms); }
+function notice(html, kind = '') {
+  const el = document.createElement('div'); el.className = 'notice ' + kind; el.innerHTML = html; $('notices').appendChild(el); return el;
+}
+
+/* ---------- State ---------- */
+const S = {
+  index: null,            // data/index.json
+  series: {},             // code -> {closes, dividends, name, currency}
+  watch: [], tx: [], res: [],
+  connected: false,
+  chart: { code: null, compare: [], range: '1Y', mode: 'price' },
+};
+
+/* ---------- Prices ---------- */
+async function loadIndex() {
+  try {
+    const r = await fetch('data/index.json', { cache: 'no-cache' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    S.index = await r.json();
+    const when = new Date(S.index.updated);
+    $('priceDot').className = 'dot ok';
+    $('priceStatus').textContent = 'Prices to ' + fmtDate(latestDate());
+    $('footUpdated').textContent = ' Last price download: ' + when.toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' }) + '.';
+    const errs = Object.entries(S.index.errors || {});
+    if (errs.length) notice(`Couldn't download prices for <b>${errs.map(e => esc(e[0])).join(', ')}</b> last time (${esc(errs[0][1])}). Check the code is right in <a href="https://github.com/${REPO}/edit/main/tickers.toml" target="_blank" rel="noopener">tickers.toml</a>.`, 'warn');
+  } catch (e) {
+    S.index = { tickers: {}, errors: {} };
+    $('priceDot').className = 'dot err';
+    $('priceStatus').textContent = 'No price data yet';
+    notice(`Price history hasn't been downloaded yet. On GitHub, open <b>Actions → Update prices → Run workflow</b>, and refresh this page when it finishes (about a minute).`, 'warn');
+  }
+}
+const latestDate = () => Object.values(S.index?.tickers || {}).reduce((m, t) => t.lastDate > m ? t.lastDate : m, '');
+const tick = code => S.index?.tickers?.[code];
+async function loadSeries(code) {
+  if (S.series[code]) return S.series[code];
+  if (!tick(code)) return null;
+  try {
+    const r = await fetch(`data/prices/${encodeURIComponent(code)}.json`, { cache: 'no-cache' });
+    if (!r.ok) return null;
+    return (S.series[code] = await r.json());
+  } catch (e) { return null; }
+}
+
+// Value of 1 unit bought on the first date, with every distribution reinvested at that day's close.
+function totalReturn(closes, dividends) {
+  let units = 1, j = 0; const out = [];
+  const divs = dividends || [];
+  for (const [d, c] of closes) {
+    while (j < divs.length && divs[j][0] <= d) { if (out.length) units += units * divs[j][1] / c; j++; }
+    out.push([d, units * c]);
+  }
+  return out;
+}
+const RANGES = { '1M': 31, '6M': 183, '1Y': 366, '3Y': 1096, '5Y': 1827, '10Y': 3653, 'Max': 1e6 };
+function sliceRange(pairs, range, end) {
+  if (!pairs.length) return pairs;
+  const last = end || pairs[pairs.length - 1][0];
+  const from = new Date(new Date(last + 'T00:00:00') - RANGES[range] * 864e5).toISOString().slice(0, 10);
+  return pairs.filter(p => p[0] >= from && p[0] <= last);
+}
+function seriesStats(closes, dividends) {
+  if (closes.length < 2) return null;
+  const [d0, c0] = closes[0], [d1, c1] = closes[closes.length - 1];
+  const from = d0, divIn = (dividends || []).filter(x => x[0] > from && x[0] <= d1);
+  const tr = totalReturn(closes, divIn);
+  const trRet = tr[tr.length - 1][1] / tr[0][1] - 1;
+  const days = daysBetween(d0, d1);
+  let peak = -Infinity, maxDD = 0, ddFrom = '', ddTo = '', peakDate = '';
+  for (const [d, v] of closes) { if (v > peak) { peak = v; peakDate = d; } const dd = v / peak - 1; if (dd < maxDD) { maxDD = dd; ddFrom = peakDate; ddTo = d; } }
+  const rets = []; for (let i = 1; i < closes.length; i++) rets.push(Math.log(closes[i][1] / closes[i - 1][1]));
+  const mean = rets.reduce((a, b) => a + b, 0) / rets.length;
+  const vol = Math.sqrt(rets.reduce((a, b) => a + (b - mean) ** 2, 0) / Math.max(1, rets.length - 1)) * Math.sqrt(252);
+  return {
+    priceRet: c1 / c0 - 1, trRet, days,
+    cagr: days >= 365 ? Math.pow(1 + trRet, 365 / days) - 1 : null,
+    maxDD, ddFrom, ddTo, vol, divTotal: divIn.reduce((a, b) => a + b[1], 0), divCount: divIn.length,
+  };
+}
+
+/* ---------- Google Sheets ---------- */
+const G = {
+  cfgKey: 'mbl_config', tokKey: 'jm-google-token', client: null, sheetIds: {},
+  clientId() { return (store.get(this.cfgKey, {}) || {}).clientId || ''; },
+  setClientId(id) { store.set(this.cfgKey, { ...(store.get(this.cfgKey, {}) || {}), clientId: id }); this.client = null; },
+  sheet() { return (store.get('inv_config', {}) || {}).sheetId || DEFAULT_SHEET; },
+  setSheet(id) { store.set('inv_config', { ...(store.get('inv_config', {}) || {}), sheetId: id }); },
+  tok() { return store.get(this.tokKey, null); },
+  valid() { const t = this.tok(); return !!(t && t.exp > Date.now()); },
+  async api(path, opts = {}) {
+    if (!this.valid()) { signedOut(); throw new Error('Signed out. Press Connect.'); }
+    const res = await fetch('https://sheets.googleapis.com/v4/spreadsheets' + path, {
+      ...opts, headers: { Authorization: 'Bearer ' + this.tok().t, 'Content-Type': 'application/json', ...(opts.headers || {}) },
+    });
+    if (res.status === 401) { store.del(this.tokKey); signedOut(); throw new Error('Google sign-in expired. Press Connect.'); }
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error((body.error && body.error.message) || 'HTTP ' + res.status);
+    return body;
+  },
+  async ensureTabs() {
+    const id = this.sheet();
+    const meta = await this.api(`/${id}?fields=properties.title,sheets.properties(sheetId,title)`);
+    meta.sheets.forEach(s => this.sheetIds[s.properties.title] = s.properties.sheetId);
+    const missing = Object.keys(TABS).filter(t => !(t in this.sheetIds));
+    if (!missing.length) return;
+    const r = await this.api(`/${id}:batchUpdate`, { method: 'POST', body: JSON.stringify({ requests: missing.map(title => ({ addSheet: { properties: { title, gridProperties: { frozenRowCount: 1 } } } })) }) });
+    r.replies.forEach(x => this.sheetIds[x.addSheet.properties.title] = x.addSheet.properties.sheetId);
+    const data = missing.map(t => ({ range: `${t}!A1`, values: [TABS[t], ...seedRows(t)] }));
+    await this.api(`/${id}/values:batchUpdate`, { method: 'POST', body: JSON.stringify({ valueInputOption: 'USER_ENTERED', data }) });
+    // A brand-new spreadsheet starts with an empty "Sheet1"; tidy it away once our tabs exist.
+    const blank = this.sheetIds.Sheet1 ?? this.sheetIds['Sheet 1'];
+    if (blank != null && Object.keys(this.sheetIds).length > 3) {
+      const v = await this.api(`/${id}/values/${encodeURIComponent((this.sheetIds.Sheet1 != null ? 'Sheet1' : 'Sheet 1') + '!A1:Z5')}`);
+      if (!v.values) await this.api(`/${id}:batchUpdate`, { method: 'POST', body: JSON.stringify({ requests: [{ deleteSheet: { sheetId: blank } }] }) }).catch(() => {});
+    }
+    toast('Set up ' + missing.join(', ') + ' in your sheet');
+  },
+  async readAll() {
+    const id = this.sheet();
+    const q = Object.keys(TABS).map(t => 'ranges=' + encodeURIComponent(`${t}!A2:${String.fromCharCode(64 + TABS[t].length)}`)).join('&');
+    const r = await this.api(`/${id}/values:batchGet?${q}&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER`);
+    const out = {};
+    Object.keys(TABS).forEach((t, i) => {
+      out[t] = (r.valueRanges[i].values || []).map((row, k) => ({ row, _row: k + 2 })).filter(x => x.row.some(v => String(v).trim() !== ''));
+    });
+    return out;
+  },
+  async append(tab, values) {
+    await this.api(`/${this.sheet()}/values/${encodeURIComponent(tab + '!A1')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, { method: 'POST', body: JSON.stringify({ values: [values] }) });
+  },
+  async update(tab, rowNum, values) {
+    const range = `${tab}!A${rowNum}:${String.fromCharCode(64 + values.length)}${rowNum}`;
+    await this.api(`/${this.sheet()}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`, { method: 'PUT', body: JSON.stringify({ values: [values] }) });
+  },
+  async remove(tab, rowNum) {
+    await this.api(`/${this.sheet()}:batchUpdate`, { method: 'POST', body: JSON.stringify({ requests: [{ deleteDimension: { range: { sheetId: this.sheetIds[tab], dimension: 'ROWS', startIndex: rowNum - 1, endIndex: rowNum } } }] }) });
+  },
+};
+
+function seedRows(tab) {
+  if (tab === 'Resources') return DEFAULT_RESOURCES;
+  if (tab === 'Watchlist') return Object.entries(S.index?.tickers || {}).filter(([, t]) => !t.benchmark)
+    .map(([c, t]) => [c, t.hint || t.name, t.category, t.ethical ? 'Yes' : '', 'Researching', '', 'From the financial coaching email', todayISO()]);
+  return [];
+}
+
+// Sheets dates arrive as serial numbers (days since 30 Dec 1899) or as typed text.
+function sheetDate(v) {
+  if (typeof v === 'number') return new Date(Math.round((v - 25569) * 864e5)).toISOString().slice(0, 10);
+  const s = String(v || '').trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/); if (m) return `${m[3].length === 2 ? '20' + m[3] : m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  return s;
+}
+function parseSheet(d) {
+  S.watch = d.Watchlist.map(({ row: r, _row }) => ({ _row, code: String(r[0] || '').trim().toUpperCase(), name: r[1] || '', category: r[2] || '', ethical: /^(y|yes|true|1)$/i.test(String(r[3] ?? '')), status: r[4] || 'Researching', target: r[5] === '' || r[5] == null ? null : num(r[5]), notes: r[6] || '', added: sheetDate(r[7]) })).filter(w => w.code);
+  S.tx = d.Purchases.map(({ row: r, _row }) => ({ _row, date: sheetDate(r[0]), code: String(r[1] || '').trim().toUpperCase(), type: /^s/i.test(String(r[2] || '')) ? 'Sell' : 'Buy', units: num(r[3]), price: num(r[4]), fees: num(r[5]), platform: r[6] || '', notes: r[7] || '' })).filter(t => t.code && t.units > 0);
+  S.res = d.Resources.map(({ row: r, _row }) => ({ _row, title: r[0] || '', url: r[1] || '', category: r[2] || 'Other', notes: r[3] || '' })).filter(x => x.url);
+}
+
+function signedOut() {
+  S.connected = false;
+  $('sheetDot').className = 'dot';
+  $('sheetStatus').textContent = store.get('inv_cache', null) ? 'Signed out · showing your last data' : 'Sheet not connected';
+  $('connectBtn').textContent = 'Connect'; $('connectBtn').hidden = false;
+}
+function loadGis() {
+  return new Promise((ok, fail) => {
+    if (window.google?.accounts?.oauth2) return ok();
+    const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+    s.onload = ok; s.onerror = () => fail(new Error("Google sign-in didn't load")); document.head.appendChild(s);
+  });
+}
+// Runs from a click, and stays synchronous once Google's script has loaded, so the popup isn't blocked.
+function connect() {
+  if (!G.clientId()) { openSettings('Paste your Google OAuth Client ID to connect.'); return; }
+  if (!G.sheet()) { openSettings('Paste your Google Sheet link, or press "Create a new sheet".'); return; }
+  if (G.valid()) { refreshSheet(); return; }
+  if (!window.google?.accounts?.oauth2) { loadGis().then(connect, e => toast(e.message)); return; }
+  if (!G.client) G.client = google.accounts.oauth2.initTokenClient({
+    client_id: G.clientId(), scope: 'https://www.googleapis.com/auth/spreadsheets',
+    callback: r => {
+      if (r.error) { toast('Google sign-in failed: ' + r.error); return; }
+      store.set(G.tokKey, { t: r.access_token, exp: Date.now() + (r.expires_in - 120) * 1000 });
+      refreshSheet();
+    },
+    error_callback: e => toast('Sign-in was closed or blocked' + (e?.type ? ' (' + e.type + ')' : '')),
+  });
+  G.client.requestAccessToken({ prompt: '' });
+}
+async function refreshSheet() {
+  $('sheetStatus').textContent = 'Loading your sheet…';
+  try {
+    await G.ensureTabs();
+    const d = await G.readAll();
+    parseSheet(d);
+    store.set('inv_cache', d);
+    S.connected = true;
+    $('sheetDot').className = 'dot ok';
+    $('sheetStatus').textContent = 'Sheet connected';
+    $('connectBtn').textContent = 'Refresh';
+    await loadHeldSeries();
+    renderAll();
+  } catch (e) {
+    $('sheetDot').className = 'dot err';
+    $('sheetStatus').textContent = "Couldn't load the sheet";
+    toast(e.message, 6000);
+  }
+}
+async function saveRow(tab, item, values) {
+  if (!S.connected) { connect(); throw new Error('Connect your sheet first'); }
+  if (item && item._row) await G.update(tab, item._row, values); else await G.append(tab, values);
+  await refreshSheet();
+}
+async function deleteRow(tab, item) {
+  if (!S.connected) { connect(); return; }
+  await G.remove(tab, item._row);
+  await refreshSheet();
+}
+
+/* ---------- Holdings maths ---------- */
+// Parcels are matched oldest-first (FIFO) when you sell. The ATO lets you pick parcels, so treat this as a guide.
+function computeHoldings(txs = S.tx) {
+  const list = [...txs].sort((a, b) => a.date.localeCompare(b.date) || (a.type === 'Buy' ? -1 : 1));
+  const by = {}, realised = [];
+  for (const t of list) {
+    const h = by[t.code] ||= { code: t.code, lots: [] };
+    if (t.type === 'Buy') {
+      const cost = t.units * t.price + t.fees;
+      h.lots.push({ code: t.code, date: t.date, units: t.units, left: t.units, cost, costLeft: cost, platform: t.platform });
+    } else {
+      let rem = t.units; const perUnit = (t.units * t.price - t.fees) / t.units;
+      for (const lot of h.lots) {
+        if (rem <= 1e-9) break;
+        if (lot.left <= 1e-9) continue;
+        const take = Math.min(lot.left, rem), c = lot.costLeft * take / lot.left;
+        lot.left -= take; lot.costLeft -= c; rem -= take;
+        realised.push({ code: t.code, sold: t.date, bought: lot.date, units: take, proceeds: take * perUnit, cost: c, gain: take * perUnit - c, days: daysBetween(lot.date, t.date) });
+      }
+      if (rem > 1e-9) realised.push({ code: t.code, sold: t.date, units: rem, oversold: true });
+    }
+  }
+  const rows = Object.values(by).map(h => {
+    const units = h.lots.reduce((a, l) => a + l.left, 0), cost = h.lots.reduce((a, l) => a + l.costLeft, 0);
+    const p = tick(h.code)?.last, value = p != null ? units * p : null;
+    return { code: h.code, units, cost, avg: units ? cost / units : 0, price: p, value, gain: value != null ? value - cost : null, lots: h.lots.filter(l => l.left > 1e-9), distributions: estDistributions(h.code, txs) };
+  }).filter(r => r.units > 1e-9);
+  const value = rows.reduce((a, r) => a + (r.value ?? r.cost), 0), cost = rows.reduce((a, r) => a + r.cost, 0);
+  return { rows, realised, value, cost, gain: value - cost, distributions: rows.reduce((a, r) => a + r.distributions, 0) };
+}
+// You're entitled to a distribution if you held units the day before its ex-date.
+function estDistributions(code, txs) {
+  const s = S.series[code]; if (!s) return 0;
+  const mine = txs.filter(t => t.code === code);
+  if (!mine.length) return 0;
+  const first = mine.reduce((m, t) => t.date < m ? t.date : m, '9999');
+  return (s.dividends || []).filter(d => d[0] > first).reduce((sum, [d, amt]) => {
+    const held = mine.filter(t => t.date < d).reduce((a, t) => a + (t.type === 'Buy' ? t.units : -t.units), 0);
+    return sum + Math.max(0, held) * amt;
+  }, 0);
+}
+async function loadHeldSeries() { await Promise.all([...new Set(S.tx.map(t => t.code))].map(loadSeries)); }
+
+/* ---------- Watchlist view ---------- */
+// Watchlist = your sheet rows, plus (until you connect) every ticker the price job follows.
+function watchItems() {
+  const held = new Set(computeHoldings().rows.map(r => r.code));
+  const items = S.watch.length || S.connected ? S.watch.map(w => ({ ...w })) :
+    Object.entries(S.index?.tickers || {}).filter(([, t]) => !t.benchmark).map(([c, t]) => ({ code: c, name: t.hint || t.name, category: t.category, ethical: t.ethical, status: 'Researching', notes: '' }));
+  for (const c of held) if (!items.some(i => i.code === c)) items.push({ code: c, name: tick(c)?.name || '', category: tick(c)?.category || '', status: 'Holding', notes: '' });
+  items.forEach(i => { i.t = tick(i.code); i.held = held.has(i.code); if (i.held) i.status = 'Holding'; });
+  return items;
+}
+function sparkSVG(vals, w = 110, h = 30) {
+  if (!vals || vals.length < 2) return '<span class="muted small">–</span>';
+  const lo = Math.min(...vals), hi = Math.max(...vals), sx = w / (vals.length - 1), sy = hi === lo ? 0 : (h - 4) / (hi - lo);
+  const pts = vals.map((v, i) => `${(i * sx).toFixed(1)},${(h - 2 - (v - lo) * sy).toFixed(1)}`).join(' ');
+  const col = vals[vals.length - 1] >= vals[0] ? 'var(--up)' : 'var(--down)';
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+}
+function renderWatchlist() {
+  const items = watchItems();
+  const cats = [...new Set(items.map(i => i.category).filter(Boolean))].sort();
+  const keepCat = $('wlCat').value, keepSt = $('wlStatus').value;
+  $('wlCat').innerHTML = '<option value="">All categories</option>' + cats.map(c => `<option>${esc(c)}</option>`).join('');
+  $('wlStatus').innerHTML = '<option value="">Any status</option>' + STATUSES.map(s => `<option>${s}</option>`).join('');
+  $('wlCat').value = cats.includes(keepCat) ? keepCat : ''; $('wlStatus').value = keepSt;
+  $('catList').innerHTML = [...new Set([...cats, 'Australian shares', 'US shares', 'Global shares', 'Diversified', 'Thematic: tech & AI'])].map(c => `<option value="${esc(c)}">`).join('');
+  const q = $('wlSearch').value.trim().toLowerCase(), cat = $('wlCat').value, st = $('wlStatus').value, eth = $('wlEth').getAttribute('aria-pressed') === 'true';
+  const shown = items.filter(i => (!q || (i.code + ' ' + i.name + ' ' + (i.t?.name || '')).toLowerCase().includes(q)) && (!cat || i.category === cat) && (!st || i.status === st) && (!eth || i.ethical));
+  const order = s => STATUSES.indexOf(s);
+  shown.sort((a, b) => order(a.status) - order(b.status) || a.code.localeCompare(b.code));
+  $('wlBody').innerHTML = shown.length ? shown.map(i => {
+    const p = i.t?.perf || {}, k = esc(i.code);
+    const near = i.target && i.t?.last && i.t.last <= i.target ? ` <span class="badge warn" title="At or below your target price of ${aud(i.target)}">target</span>` : '';
+    return `<tr class="click" data-code="${k}">
+      <td><span class="code">${k}</span></td>
+      <td class="wide">${esc(i.name || i.t?.name || '')}<div class="small muted">${esc(i.category)} ${i.ethical ? '<span class="badge eth">Ethical</span>' : ''}</div></td>
+      <td><span class="badge ${i.held ? 'hold' : ''}">${esc(i.status)}</span>${near}</td>
+      <td class="n">${i.t ? money(i.t.last, i.t.currency) : '<span class="small muted" title="Not in tickers.toml yet, so no prices are downloaded">no data</span>'}</td>
+      <td class="n ${cls(p['1M'])}">${pct(p['1M'])}</td><td class="n ${cls(p['1Y'])}">${pct(p['1Y'])}</td><td class="n ${cls(p['5Y'])}">${pct(p['5Y'], 0)}</td>
+      <td class="n">${i.t ? pct(i.t.yield12m).replace('+', '') : '–'}</td>
+      <td>${sparkSVG(i.t?.spark)}</td>
+      <td><button class="btn ghost" data-edit="${k}" aria-label="Edit ${k}">Edit</button></td></tr>`;
+  }).join('') : `<tr><td colspan="10" class="empty">Nothing matches. ${items.length ? '' : 'Add your first investment with <b>+ Add</b>.'}</td></tr>`;
+  const missing = items.filter(i => !i.t).map(i => i.code);
+  $('sameIndex').innerHTML = (missing.length ? `<b>${esc(missing.join(', '))}</b> ${missing.length > 1 ? "aren't" : "isn't"} in the price list yet. <a href="https://github.com/${REPO}/edit/main/tickers.toml" target="_blank" rel="noopener">Add to tickers.toml</a> and the next run downloads its history.` : '');
+}
+
+function openWatch(code) {
+  const f = $('wlForm'), w = code ? S.watch.find(x => x.code === code) || watchItems().find(x => x.code === code) : null;
+  f.reset();
+  f.status.innerHTML = STATUSES.map(s => `<option>${s}</option>`).join('');
+  $('wlDlgTitle').textContent = w ? 'Edit ' + w.code : 'Add to watchlist';
+  if (w) { f.code.value = w.code; f.name.value = w.name; f.category.value = w.category; f.target.value = w.target ?? ''; f.ethical.checked = !!w.ethical; f.status.value = STATUSES.includes(w.status) ? w.status : 'Researching'; f.notes.value = w.notes || ''; }
+  $('wlDelete').hidden = !(w && w._row);
+  $('wlDlgMsg').textContent = S.connected ? '' : 'Connect your Google Sheet to save changes.';
+  $('wlDlg').dataset.code = w?._row ? w.code : '';
+  $('wlDlg').showModal();
+}
+$('wlForm').addEventListener('submit', async e => {
+  const f = e.target; e.preventDefault();
+  const code = f.code.value.trim().toUpperCase(), w = S.watch.find(x => x.code === $('wlDlg').dataset.code);
+  if (!w && S.watch.some(x => x.code === code)) { $('wlDlgMsg').textContent = code + ' is already on your watchlist.'; return; }
+  const vals = [code, f.name.value.trim() || tick(code)?.name || '', f.category.value.trim(), f.ethical.checked ? 'Yes' : '', f.status.value, f.target.value, f.notes.value.trim(), w?.added || todayISO()];
+  try { await saveRow('Watchlist', w, vals); $('wlDlg').close(); toast('Saved ' + code + (tick(code) ? '' : '. Add it to tickers.toml to get its prices.')); }
+  catch (err) { $('wlDlgMsg').textContent = err.message; }
+});
+$('wlDelete').addEventListener('click', async () => {
+  const w = S.watch.find(x => x.code === $('wlDlg').dataset.code); if (!w || !confirm('Remove ' + w.code + ' from your watchlist?')) return;
+  try { await deleteRow('Watchlist', w); $('wlDlg').close(); } catch (err) { $('wlDlgMsg').textContent = err.message; }
+});
+
+/* ---------- Overview ---------- */
+function renderOverview() {
+  const h = computeHoldings();
+  const steps = [
+    [!!S.index?.updated, 'Prices downloading', 'The daily job is filling in price history.'],
+    [S.connected || !!store.get('inv_cache', null), 'Connect your Google Sheet', 'Your watchlist, purchases and links live there, privately.'],
+    [S.watch.some(w => w.status !== 'Researching' || w.notes !== 'From the financial coaching email'), 'Sort your watchlist', 'Set a status on each fund and jot down why it interests you.'],
+    [S.tx.length > 0, 'Log your first purchase', 'Once you buy, the charts mark when you bought and track how it has done since.'],
+  ];
+  $('startCard').innerHTML = steps.every(s => s[0]) ? '' : `<div class="card" style="margin-bottom:14px"><h2>Getting started</h2><ol style="margin:8px 0 0;padding-left:20px">${steps.map(([done, t, d]) => `<li style="margin-bottom:6px">${done ? '✅' : '⬜️'} <b>${t}</b> <span class="muted small">${d}</span></li>`).join('')}</ol></div>`;
+  $('kpis').innerHTML = h.rows.length ? [
+    ['Portfolio value', aud(h.value), `${h.rows.length} investment${h.rows.length > 1 ? 's' : ''}`],
+    ['Invested', aud(h.cost), 'Cost base incl. brokerage'],
+    ['Gain / loss', `<span class="${cls(h.gain)}">${aud(h.gain)}</span>`, `<span class="${cls(h.gain)}">${pct(h.cost ? h.gain / h.cost : 0)}</span> on price`],
+    ['Distributions', aud(h.distributions), 'Estimated, from ex-dates'],
+  ].map(([l, v, s]) => `<div class="kpi"><div class="eyebrow">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('') : '';
+  const bm = Object.entries(S.index?.tickers || {}).filter(([, t]) => t.benchmark);
+  $('markets').innerHTML = bm.length ? bm.map(([c, t]) => `<div class="row" style="padding:8px 0;border-bottom:1px solid var(--line)">
+      <div style="flex:1;min-width:140px"><b>${esc(t.hint || t.name)}</b><div class="small muted">${t.last.toLocaleString('en-AU', { maximumFractionDigits: 0 })} pts · ${fmtDate(t.lastDate)}</div></div>
+      ${sparkSVG(t.spark, 90, 28)}
+      <div class="tnum" style="text-align:right;min-width:110px"><span class="${cls(t.perf['1D'])}">${pct(t.perf['1D'], 2)}</span> <span class="small muted">day</span><br><span class="${cls(t.perf['1Y'])}">${pct(t.perf['1Y'])}</span> <span class="small muted">year</span></div></div>`).join('') + '<p class="small muted" style="margin:8px 0 0">An index is the market\'s scoreboard. Most of your watchlist tracks one of these or something like them.</p>'
+    : '<div class="empty">Benchmarks appear after the first price download.</div>';
+  const w = watchItems().filter(i => i.t?.perf?.['1M'] != null).sort((a, b) => b.t.perf['1M'] - a.t.perf['1M']);
+  const line = i => `<tr class="click" data-code="${esc(i.code)}"><td class="code">${esc(i.code)}</td><td class="wide small muted">${esc(i.name || i.t.name)}</td><td class="n ${cls(i.t.perf['1M'])}">${pct(i.t.perf['1M'])}</td></tr>`;
+  $('movers').innerHTML = w.length ? `<table><tbody>${w.slice(0, 3).map(line).join('')}${w.length > 6 ? '<tr><td colspan="3" class="small muted" style="text-align:center">…</td></tr>' : ''}${w.slice(Math.max(3, w.length - 3)).map(line).join('')}</tbody></table><p class="small muted" style="margin:8px 0 0">A month is a very short window. Big moves either way are normal and often reverse.</p>` : '<div class="empty">No price data yet.</div>';
+}
+
+/* ---------- Charts ---------- */
+let chart, mixChart, dcaChart, cgChart;
+const PALETTE = () => ['--s1', '--s2', '--s3', '--s4', '--s5'].map(cssVar);
+function chartDefaults() {
+  Chart.defaults.font.family = cssVar('--body').split(',')[0].replace(/"/g, '') || 'system-ui';
+  Chart.defaults.color = cssVar('--muted');
+  Chart.defaults.borderColor = cssVar('--line');
+}
+function fillTickerSelects() {
+  const all = Object.entries(S.index?.tickers || {});
+  const opt = ([c, t]) => `<option value="${esc(c)}">${esc(c)} · ${esc((t.hint || t.name || '').slice(0, 42))}</option>`;
+  const funds = all.filter(([, t]) => !t.benchmark), bms = all.filter(([, t]) => t.benchmark);
+  const html = `<optgroup label="Investments">${funds.map(opt).join('')}</optgroup><optgroup label="Market indexes">${bms.map(opt).join('')}</optgroup>`;
+  $('chTicker').innerHTML = html;
+  $('chCompare').innerHTML = '<option value="">+ Compare with…</option>' + html;
+  $('dcaTicker').innerHTML = html;
+  $('codeList').innerHTML = all.map(([c]) => `<option value="${esc(c)}">`).join('');
+  if (!S.chart.code) S.chart.code = funds[0]?.[0] || bms[0]?.[0] || null;
+  if (S.chart.code) $('chTicker').value = S.chart.code;
+  if (!$('dcaTicker').dataset.set && all.length) { $('dcaTicker').value = tick('VAS') ? 'VAS' : all[0][0]; $('dcaTicker').dataset.set = 1; }
+}
+$('chRange').innerHTML = Object.keys(RANGES).map(r => `<button class="chip" data-range="${r}" aria-pressed="${r === '1Y'}">${r}</button>`).join('');
+$('chRange').addEventListener('click', e => { const b = e.target.closest('[data-range]'); if (!b) return; S.chart.range = b.dataset.range; $('chRange').querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', x === b)); renderChart(); });
+document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => { S.chart.mode = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach(x => x.setAttribute('aria-pressed', x === b)); renderChart(); }));
+$('chTicker').addEventListener('change', e => { S.chart.code = e.target.value; S.chart.compare = S.chart.compare.filter(c => c !== S.chart.code); renderChart(); });
+$('chCompare').addEventListener('change', e => { const c = e.target.value; e.target.value = ''; if (c && c !== S.chart.code && !S.chart.compare.includes(c) && S.chart.compare.length < 3) S.chart.compare.push(c); renderChart(); });
+$('chCompareChips').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (b) { S.chart.compare = S.chart.compare.filter(c => c !== b.dataset.rm); renderChart(); } });
+
+function thin(pairs, max = 900) { if (pairs.length <= max) return pairs; const step = Math.ceil(pairs.length / max); return pairs.filter((_, i) => i % step === 0 || i === pairs.length - 1); }
+const ms = d => new Date(d + 'T00:00:00').getTime();
+
+async function renderChart() {
+  const { code, compare, range } = S.chart;
+  if (!code) { $('chStats').innerHTML = '<div class="empty">No price data yet.</div>'; return; }
+  const codes = [code, ...compare];
+  const all = await Promise.all(codes.map(loadSeries));
+  const base = all[0]; if (!base) return;
+  const end = base.closes[base.closes.length - 1][0];
+  const comparing = compare.length > 0, mode = comparing && S.chart.mode === 'price' ? 'pct' : S.chart.mode;
+  $('chCompareChips').innerHTML = compare.map((c, i) => `<button class="chip" data-rm="${esc(c)}" style="border-color:${PALETTE()[i + 1]}" aria-label="Stop comparing ${esc(c)}">${esc(c)} ✕</button>`).join('');
+  $('chHint').textContent = mode === 'pct' ? 'Comparing: % change from the start of the range, price only' : mode === 'growth' ? 'Value of $10,000 invested at the start, distributions reinvested' : '';
+  const col = PALETTE();
+  const datasets = [];
+  all.forEach((s, i) => {
+    if (!s) return;
+    let pts = sliceRange(s.closes, range, end);
+    if (!pts.length) return;
+    if (mode === 'growth') { const tr = totalReturn(pts, (s.dividends || []).filter(d => d[0] > pts[0][0])); pts = tr.map(([d, v]) => [d, v / tr[0][1] * 10000]); }
+    else if (mode === 'pct') { const b = pts[0][1]; pts = pts.map(([d, v]) => [d, (v / b - 1) * 100]); }
+    datasets.push({ label: codes[i], data: thin(pts).map(([d, v]) => ({ x: ms(d), y: v })), borderColor: col[i], backgroundColor: col[i], borderWidth: i ? 1.6 : 2.2, pointRadius: 0, tension: 0.1 });
+  });
+  // Your buys and sells, and your average cost, on a single-ticker price chart
+  const mine = S.tx.filter(t => t.code === code);
+  const pos = computeHoldings().rows.find(r => r.code === code);
+  if (mode === 'price' && mine.length) {
+    const from = sliceRange(base.closes, range, end)[0]?.[0] || '';
+    const shown = mine.filter(t => t.date >= from);
+    if (shown.length) datasets.push({ type: 'scatter', label: 'Your trades', data: shown.map(t => ({ x: ms(t.date), y: t.price, t })), pointStyle: 'triangle', rotation: shown.map(t => t.type === 'Sell' ? 180 : 0), pointRadius: 8, pointHoverRadius: 10, backgroundColor: shown.map(t => t.type === 'Sell' ? cssVar('--down') : cssVar('--up')), borderColor: cssVar('--surface'), borderWidth: 1.5 });
+    if (pos && datasets[0]?.data.length) { const d = datasets[0].data; datasets.push({ label: 'Your average cost', data: [{ x: d[0].x, y: pos.avg }, { x: d[d.length - 1].x, y: pos.avg }], borderColor: cssVar('--muted'), borderDash: [6, 5], borderWidth: 1.2, pointRadius: 0 }); }
+  }
+  const cur = tick(code)?.currency;
+  const yfmt = v => mode === 'pct' ? v.toFixed(0) + '%' : mode === 'growth' ? '$' + Math.round(v).toLocaleString('en-AU') : (tick(code)?.benchmark ? Math.round(v).toLocaleString('en-AU') : money(v, cur));
+  chartDefaults();
+  if (chart) chart.destroy();
+  chart = new Chart($('chart'), {
+    type: 'line', data: { datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false, normalized: true,
+      interaction: { mode: 'nearest', axis: 'x', intersect: false },
+      scales: {
+        x: { type: 'linear', min: datasets[0]?.data[0]?.x, max: datasets[0]?.data.at(-1)?.x, ticks: { maxTicksLimit: 7, callback: v => new Date(v).toLocaleDateString('en-AU', RANGES[range] > 400 ? { month: 'short', year: 'numeric' } : { day: 'numeric', month: 'short' }) }, grid: { display: false } },
+        y: { ticks: { callback: yfmt }, grid: { color: cssVar('--line') } },
+      },
+      plugins: {
+        legend: { display: datasets.length > 1, labels: { usePointStyle: true, boxWidth: 8 } },
+        tooltip: { callbacks: {
+          title: items => fmtDate(new Date(items[0].parsed.x).toISOString().slice(0, 10)),
+          label: c => c.raw.t ? `${c.raw.t.type} ${c.raw.t.units} @ ${aud(c.raw.t.price)}` : `${c.dataset.label}: ${yfmt(c.parsed.y)}`,
+        } },
+      },
+    },
+  });
+  // Stats for the main ticker over the range
+  const st = seriesStats(sliceRange(base.closes, range, end), base.dividends);
+  const stat = (l, v, help, c = '') => `<div class="stat"><div class="l"><span class="help" title="${esc(help)}">${l}</span></div><div class="v ${c}">${v}</div></div>`;
+  $('chStats').innerHTML = st ? [
+    stat('Price change', pct(st.priceRet), 'How much the unit price moved over this range. Ignores distributions.', cls(st.priceRet)),
+    stat('Total return', pct(st.trRet), 'Price change plus distributions, as if every payout was reinvested. This is the fairer way to compare funds.', cls(st.trRet)),
+    stat('Per year', st.cagr == null ? '–' : pct(st.cagr), 'Total return converted to an average yearly rate (CAGR). Not shown for ranges under a year, where it would exaggerate.', cls(st.cagr)),
+    stat('Biggest fall', pct(st.maxDD), `The largest drop from a high to a later low in this range${st.ddFrom ? ` (${fmtDate(st.ddFrom)} to ${fmtDate(st.ddTo)})` : ''}. A gut-check on how much it can fall.`, 'down'),
+    stat('Volatility', (st.vol * 100).toFixed(0) + '%', 'How much daily prices jump around, scaled to a year (standard deviation). Around 15% is typical for a broad share market. Higher means a bumpier ride.'),
+    stat('Distributions', st.divCount ? `${money(st.divTotal, cur)} <span class="small muted">(${st.divCount})</span>` : '–', 'Cash paid per unit over this range, and how many payments.'),
+  ].join('') : '';
+  renderPosition(code, base, pos, mine);
+  const w = S.watch.find(x => x.code === code), t = tick(code);
+  $('chNotes').innerHTML = `<h3>${esc(code)} · ${esc(t?.name || '')}</h3>
+    <p class="small muted" style="margin:0 0 8px">${esc(t?.symbol || '')} · ${esc(t?.currency || '')} · history from ${fmtDate(t?.firstDate)}</p>
+    ${w ? `<p style="white-space:pre-wrap;margin:0 0 10px">${esc(w.notes) || '<span class="muted">No notes yet.</span>'}</p>` : '<p class="muted">Not on your watchlist.</p>'}
+    <div class="row"><button class="btn" data-edit="${esc(code)}">${w ? 'Edit notes' : 'Add to watchlist'}</button>
+    ${t && !t.benchmark ? `<a class="btn" href="https://www.marketindex.com.au/asx/${esc(code.toLowerCase())}" target="_blank" rel="noopener">Market Index ↗</a>` : ''}</div>`;
+}
+function renderPosition(code, base, pos, mine) {
+  if (!mine.length) { $('chPosition').innerHTML = `<h3>Your position</h3><p class="muted">You haven't logged any trades in ${esc(code)}. When you do, they show as ▲ on the price chart, and this card tracks how it has gone since you bought.</p>`; return; }
+  const first = mine.reduce((m, t) => t.date < m.date ? t : m);
+  const then = base.closes.find(c => c[0] >= first.date)?.[1], now = base.closes[base.closes.length - 1][1];
+  $('chPosition').innerHTML = `<h3>Your position</h3><div class="stats" style="margin-top:4px">
+    <div class="stat"><div class="l">Units</div><div class="v">${pos ? +pos.units.toFixed(4) : 0}</div></div>
+    <div class="stat"><div class="l">Average cost</div><div class="v">${pos ? aud(pos.avg, 3) : '–'}</div></div>
+    <div class="stat"><div class="l">Value now</div><div class="v">${pos ? aud(pos.value) : '–'}</div></div>
+    <div class="stat"><div class="l">Your gain</div><div class="v ${cls(pos?.gain)}">${pos ? aud(pos.gain) + ' <span class="small">' + pct(pos.cost ? pos.gain / pos.cost : 0) + '</span>' : '–'}</div></div>
+    <div class="stat"><div class="l">Distributions (est.)</div><div class="v">${aud(pos?.distributions || 0)}</div></div>
+    </div><p class="small muted" style="margin:10px 0 0">First bought ${fmtDate(first.date)} (${daysBetween(first.date, todayISO())} days ago). Since then the unit price has moved <b class="${cls(now / then - 1)}">${then ? pct(now / then - 1) : '–'}</b>, from ${aud(then)} to ${aud(now)}.</p>`;
+}
+
+/* ---------- Holdings view ---------- */
+function renderHoldings() {
+  const h = computeHoldings(), cur = todayISO();
+  $('hKpis').innerHTML = [
+    ['Value', aud(h.value)], ['Invested', aud(h.cost)], ['Gain / loss', `<span class="${cls(h.gain)}">${aud(h.gain)} <span class="small">${pct(h.cost ? h.gain / h.cost : 0)}</span></span>`], ['Distributions (est.)', aud(h.distributions)],
+  ].map(([l, v]) => `<div class="kpi"><div class="eyebrow">${l}</div><div class="v">${v}</div></div>`).join('');
+  $('hBody').innerHTML = h.rows.length ? h.rows.sort((a, b) => (b.value ?? 0) - (a.value ?? 0)).map(r => `<tr class="click" data-code="${esc(r.code)}"><td class="code">${esc(r.code)}</td><td class="n">${+r.units.toFixed(4)}</td><td class="n">${aud(r.avg, 3)}</td><td class="n">${aud(r.value)}</td><td class="n ${cls(r.gain)}">${aud(r.gain)}<div class="small">${pct(r.cost ? r.gain / r.cost : 0)}</div></td><td class="n">${h.value ? ((r.value ?? r.cost) / h.value * 100).toFixed(0) + '%' : ''}</td></tr>`).join('')
+    : `<tr><td colspan="6" class="empty">${S.connected ? 'No holdings yet. Log a purchase to start tracking.' : 'Connect your sheet to see your holdings.'}</td></tr>`;
+  const lots = h.rows.flatMap(r => r.lots.map(l => ({ ...l, price: r.price }))).sort((a, b) => a.date.localeCompare(b.date));
+  $('lotBody').innerHTML = lots.length ? lots.map(l => {
+    const d = daysBetween(l.date, cur), val = l.price != null ? l.left * l.price : null, g = val != null ? val - l.costLeft : null;
+    const until = 366 - d;
+    return `<tr><td>${fmtDate(l.date)}</td><td class="code">${esc(l.code)}</td><td class="n">${+l.left.toFixed(4)}</td><td class="n">${aud(l.costLeft)}</td><td class="n">${aud(val)}</td><td class="n ${cls(g)}">${aud(g)}</td>
+      <td>${d > 365 ? '<span class="badge eth" title="Held more than 12 months">12 months +</span>' : `<span class="badge" title="${until} more day${until === 1 ? '' : 's'} until it's held more than 12 months">${d} days</span>`}</td></tr>`;
+  }).join('') : '<tr><td colspan="7" class="empty">Parcels appear here after your first purchase.</td></tr>';
+  const tx = [...S.tx].sort((a, b) => b.date.localeCompare(a.date));
+  $('txBody').innerHTML = tx.length ? tx.map(t => `<tr><td>${fmtDate(t.date)}</td><td class="code">${esc(t.code)}</td><td>${t.type}</td><td class="n">${t.units}</td><td class="n">${aud(t.price, 3)}</td><td class="n">${aud(t.fees)}</td><td class="n">${aud(t.units * t.price + (t.type === 'Buy' ? t.fees : -t.fees))}</td><td>${esc(t.platform)}</td><td class="wide small">${esc(t.notes)}</td><td><button class="btn ghost" data-tx="${t._row}">Edit</button></td></tr>`).join('')
+    : '<tr><td colspan="10" class="empty">No transactions logged.</td></tr>';
+  $('platList').innerHTML = [...new Set(['Betashares Direct', 'Vanguard Personal Investor', 'Moomoo', 'Stake', 'Sharesies', ...S.tx.map(t => t.platform).filter(Boolean)])].map(p => `<option value="${esc(p)}">`).join('');
+  // Realised gains by Australian financial year (1 July to 30 June)
+  const fy = d => { const [y, m] = d.split('-').map(Number); return m >= 7 ? `${y}–${String(y + 1).slice(2)}` : `${y - 1}–${String(y).slice(2)}`; };
+  const byFy = {};
+  h.realised.filter(r => !r.oversold).forEach(r => { const k = fy(r.sold); (byFy[k] ||= { gain: 0, disc: 0 }); byFy[k].gain += r.gain; if (r.days > 365 && r.gain > 0) byFy[k].disc += r.gain; });
+  const over = h.realised.filter(r => r.oversold);
+  $('realised').innerHTML = `<h3>Sold: realised gains by financial year</h3>` + (Object.keys(byFy).length ? `<div class="tablewrap"><table><thead><tr><th>Year</th><th class="n">Net gain / loss</th><th class="n"><span class="help" title="Gains on parcels held more than 12 months. Individuals can usually halve these after taking off any losses, but check the ATO rules or ask your tax agent.">Of which held 12m+</span></th></tr></thead><tbody>${Object.entries(byFy).sort().reverse().map(([k, v]) => `<tr><td>${k}</td><td class="n ${cls(v.gain)}">${aud(v.gain)}</td><td class="n">${aud(v.disc)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Nothing sold yet.</p>')
+    + (over.length ? `<p class="notice err">Some sales are for more units than you'd bought (${esc([...new Set(over.map(o => o.code))].join(', '))}). Check those transactions.</p>` : '')
+    + '<p class="small muted">A guide for your records, not a tax calculation. It matches sales to your oldest parcels first.</p>';
+  // Mix by category
+  chartDefaults();
+  const mix = {};
+  h.rows.forEach(r => { const c = S.watch.find(w => w.code === r.code)?.category || tick(r.code)?.category || 'Other'; mix[c] = (mix[c] || 0) + (r.value ?? r.cost); });
+  if (mixChart) mixChart.destroy();
+  const entries = Object.entries(mix).sort((a, b) => b[1] - a[1]);
+  mixChart = entries.length ? new Chart($('mixChart'), {
+    type: 'doughnut', data: { labels: entries.map(e => e[0]), datasets: [{ data: entries.map(e => e[1]), backgroundColor: PALETTE(), borderColor: cssVar('--surface'), borderWidth: 2 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'right', labels: { boxWidth: 10 } }, tooltip: { callbacks: { label: c => `${c.label}: ${aud(c.raw, 0)} (${(c.raw / h.value * 100).toFixed(0)}%)` } } } },
+  }) : null;
+}
+
+function openTx(row) {
+  const f = $('txForm'), t = row ? S.tx.find(x => x._row === row) : null;
+  f.reset(); f.date.value = todayISO(); f.fees.value = 0;
+  $('txDlgTitle').textContent = t ? 'Edit transaction' : 'Log a purchase or sale';
+  if (t) { f.date.value = t.date; f.type.value = t.type; f.code.value = t.code; f.units.value = t.units; f.price.value = t.price; f.fees.value = t.fees; f.platform.value = t.platform; f.notes.value = t.notes; }
+  else if (S.chart.code && !tick(S.chart.code)?.benchmark) f.code.value = S.chart.code;
+  $('txDelete').hidden = !t; $('txDlg').dataset.row = t ? t._row : '';
+  txTotal(); $('txDlg').showModal();
+}
+function txTotal() { const f = $('txForm'), u = num(f.units.value), p = num(f.price.value), fee = num(f.fees.value); $('txTotal').textContent = u && p ? `Total ${f.type.value === 'Buy' ? 'cost' : 'proceeds'}: ${aud(u * p + (f.type.value === 'Buy' ? fee : -fee))}` + (S.connected ? '' : ' · Connect your sheet to save.') : (S.connected ? '' : 'Connect your sheet to save.'); }
+$('txForm').addEventListener('input', txTotal);
+$('txForm').addEventListener('submit', async e => {
+  e.preventDefault(); const f = e.target, t = S.tx.find(x => String(x._row) === $('txDlg').dataset.row);
+  const vals = [f.date.value, f.code.value.trim().toUpperCase(), f.type.value, num(f.units.value), num(f.price.value), num(f.fees.value), f.platform.value.trim(), f.notes.value.trim()];
+  try { await saveRow('Purchases', t, vals); $('txDlg').close(); toast('Saved'); } catch (err) { $('txTotal').textContent = err.message; }
+});
+$('txDelete').addEventListener('click', async () => {
+  const t = S.tx.find(x => String(x._row) === $('txDlg').dataset.row); if (!t || !confirm('Delete this transaction?')) return;
+  try { await deleteRow('Purchases', t); $('txDlg').close(); } catch (err) { $('txTotal').textContent = err.message; }
+});
+
+/* ---------- Resources ---------- */
+function resItems() { return S.connected || S.res.length ? S.res : DEFAULT_RESOURCES.map(([title, url, category, notes]) => ({ title, url, category, notes })); }
+function renderResources() {
+  const items = resItems(), groups = {};
+  items.forEach(r => (groups[r.category || 'Other'] ||= []).push(r));
+  const order = ['Research', 'Platforms', 'Podcasts & newsletters', 'Tax', 'Super', 'Tools'];
+  const keys = Object.keys(groups).sort((a, b) => ((order.indexOf(a) + 1) || 99) - ((order.indexOf(b) + 1) || 99) || a.localeCompare(b));
+  $('resCatList').innerHTML = keys.map(k => `<option value="${esc(k)}">`).join('');
+  const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } };
+  $('resBody').innerHTML = (S.connected ? '' : '<p class="small muted">These are the links from your coaching email. Connect your sheet to add your own, edit or remove them.</p>')
+    + keys.map(k => `<h3 style="margin:18px 0 10px">${esc(k)}</h3><div class="links">${groups[k].map(r => `<div style="position:relative"><a class="link" href="${esc(r.url)}" target="_blank" rel="noopener"><b>${esc(r.title)}</b><span class="host">${esc(host(r.url))}</span>${r.notes ? `<div class="small" style="margin-top:4px">${esc(r.notes)}</div>` : ''}</a>${r._row ? `<button class="btn ghost small" data-res="${r._row}" style="position:absolute;top:6px;right:6px" aria-label="Edit ${esc(r.title)}">Edit</button>` : ''}</div>`).join('')}</div>`).join('')
+    + `<div class="notice" style="margin-top:18px"><b>Comparing platforms?</b> Questions worth asking: brokerage per trade, whether you hold shares in your own name (CHESS-sponsored, with your own HIN) or the platform holds them for you (custodial), ASX vs US access, auto-invest options and minimum amounts.</div>`;
+}
+function openRes(row) {
+  const f = $('resForm'), r = row ? S.res.find(x => x._row === row) : null;
+  f.reset(); $('resDlgTitle').textContent = r ? 'Edit link' : 'Add a link';
+  if (r) { f.title.value = r.title; f.url.value = r.url; f.category.value = r.category; f.notes.value = r.notes; }
+  $('resDelete').hidden = !r; $('resDlg').dataset.row = r ? r._row : '';
+  if (!S.connected) { connect(); return; }
+  $('resDlg').showModal();
+}
+$('resForm').addEventListener('submit', async e => {
+  e.preventDefault(); const f = e.target, r = S.res.find(x => String(x._row) === $('resDlg').dataset.row);
+  try { await saveRow('Resources', r, [f.title.value.trim(), f.url.value.trim(), f.category.value.trim() || 'Other', f.notes.value.trim()]); $('resDlg').close(); } catch (err) { toast(err.message); }
+});
+$('resDelete').addEventListener('click', async () => {
+  const r = S.res.find(x => String(x._row) === $('resDlg').dataset.row); if (!r || !confirm('Delete this link?')) return;
+  try { await deleteRow('Resources', r); $('resDlg').close(); } catch (err) { toast(err.message); }
+});
+
+/* ---------- Learn: calculators ---------- */
+async function renderDCA() {
+  const code = $('dcaTicker').value; if (!code) return;
+  const s = await loadSeries(code); if (!s) return;
+  const years = [...new Set(s.closes.map(c => c[0].slice(0, 4)))];
+  if ($('dcaStart').dataset.code !== code) {
+    const keep = $('dcaStart').value;
+    $('dcaStart').innerHTML = years.slice(0, -1).map(y => `<option value="${y}">${y}</option>`).join('');
+    $('dcaStart').value = years.includes(keep) && keep !== years[years.length - 1] ? keep : years[Math.max(0, years.length - 11)] || years[0];
+    $('dcaStart').dataset.code = code;
+  }
+  const amt = Math.max(1, num($('dcaAmt').value)), from = $('dcaStart').value + '-01-01';
+  const closes = s.closes.filter(c => c[0] >= from); if (closes.length < 2) return;
+  let units = 0, put = 0, month = '', j = 0; const divs = (s.dividends || []).filter(d => d[0] >= from);
+  const pts = [];
+  for (const [d, c] of closes) {
+    while (j < divs.length && divs[j][0] <= d) { units += units * divs[j][1] / c; j++; }
+    if (d.slice(0, 7) !== month) { month = d.slice(0, 7); units += amt / c; put += amt; pts.push([d, put, units * c]); }
+  }
+  const last = closes[closes.length - 1], value = units * last[1];
+  pts.push([last[0], put, value]);
+  const lump = put / closes[0][1] * totalReturn(closes, divs).at(-1)[1];
+  const fmt = s.currency && s.currency !== 'AUD' ? ` <span class="small muted">(${s.currency}, price index)</span>` : '';
+  $('dcaOut').innerHTML = [
+    ['You put in', aud(put, 0)], ['Worth now', `<span class="${cls(value - put)}">${aud(value, 0)}</span>${fmt}`],
+    ['Gain', `<span class="${cls(value - put)}">${pct(value / put - 1, 0)}</span>`],
+    ['Same total, all on day one', aud(lump, 0)],
+  ].map(([l, v]) => `<div class="stat"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+  chartDefaults();
+  if (dcaChart) dcaChart.destroy();
+  const col = PALETTE();
+  dcaChart = new Chart($('dcaChart'), {
+    type: 'line', data: { datasets: [
+      { label: 'Value', data: pts.map(p => ({ x: ms(p[0]), y: p[2] })), borderColor: col[0], backgroundColor: col[0] + '33', fill: true, pointRadius: 0, borderWidth: 2 },
+      { label: 'Money put in', data: pts.map(p => ({ x: ms(p[0]), y: p[1] })), borderColor: col[4], borderDash: [5, 4], pointRadius: 0, borderWidth: 1.5 },
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false },
+      scales: { x: { type: 'linear', ticks: { maxTicksLimit: 6, callback: v => new Date(v).getFullYear() }, grid: { display: false } }, y: { ticks: { callback: v => '$' + (v >= 1000 ? Math.round(v / 1000) + 'k' : v) } } },
+      plugins: { legend: { labels: { boxWidth: 10 } }, tooltip: { callbacks: { title: i => fmtDate(new Date(i[0].parsed.x).toISOString().slice(0, 10)), label: c => `${c.dataset.label}: ${aud(c.parsed.y, 0)}` } } } },
+  });
+}
+function renderCompound() {
+  const p0 = Math.max(0, num($('cgStart').value)), m = Math.max(0, num($('cgMonthly').value)), yrs = Math.min(60, Math.max(1, Math.round(num($('cgYears').value)))), r = num($('cgRate').value) / 100;
+  const mr = Math.pow(1 + r, 1 / 12) - 1;
+  let v = p0, put = p0; const rows = [[0, p0, p0]];
+  for (let y = 1; y <= yrs; y++) { for (let k = 0; k < 12; k++) { v = v * (1 + mr) + m; put += m; } rows.push([y, put, v]); }
+  $('cgOut').innerHTML = [['You put in', aud(put, 0)], ['Growth', aud(v - put, 0)], [`After ${yrs} years`, aud(v, 0)]].map(([l, x]) => `<div class="stat"><div class="l">${l}</div><div class="v">${x}</div></div>`).join('');
+  chartDefaults();
+  if (cgChart) cgChart.destroy();
+  const col = PALETTE();
+  cgChart = new Chart($('cgChart'), {
+    type: 'bar', data: { labels: rows.map(x => x[0]), datasets: [
+      { label: 'Money put in', data: rows.map(x => x[1]), backgroundColor: col[4] },
+      { label: 'Growth', data: rows.map(x => Math.max(0, x[2] - x[1])), backgroundColor: col[0] },
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { x: { stacked: true, grid: { display: false }, title: { display: true, text: 'Years' } }, y: { stacked: true, ticks: { callback: v => '$' + (v >= 1000 ? Math.round(v / 1000) + 'k' : v) } } }, plugins: { legend: { labels: { boxWidth: 10 } }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${aud(c.parsed.y, 0)}` } } } },
+  });
+}
+['dcaTicker', 'dcaAmt', 'dcaStart'].forEach(id => $(id).addEventListener('change', renderDCA));
+['cgStart', 'cgMonthly', 'cgYears', 'cgRate'].forEach(id => $(id).addEventListener('input', renderCompound));
+
+/* ---------- Learn: articles ---------- */
+async function marketFacts() {
+  // A real example from the ASX 200 history the app holds: the worst fall and how long it took to recover.
+  const s = await loadSeries('ASX200'); if (!s || s.closes.length < 500) return '';
+  let peak = 0, peakD = '', worst = 0, wFrom = '', wTo = '';
+  for (const [d, v] of s.closes) { if (v > peak) { peak = v; peakD = d; } if (v / peak - 1 < worst) { worst = v / peak - 1; wFrom = peakD; wTo = d; } }
+  const peakVal = s.closes.find(c => c[0] === wFrom)[1];
+  const back = s.closes.find(c => c[0] > wTo && c[1] >= peakVal);
+  return `<div class="callout">From this app's own data: the ASX 200's biggest fall since ${s.closes[0][0].slice(0, 4)} was <b>${pct(worst, 0)}</b>, from ${fmtDate(wFrom)} to ${fmtDate(wTo)}. ${back ? `The index didn't get back to its old high until ${fmtDate(back[0])}, about ${(daysBetween(wFrom, back[0]) / 365).toFixed(1)} years after the peak (on price alone; with dividends included, recovery was quicker).` : 'It is still below that old high on price alone (dividends would have helped).'}</div>`;
+}
+async function renderLearn() {
+  const fact = await marketFacts();
+  const A = [
+    ['What the share market actually is', `
+      <p>A <b>share</b> is a small piece of ownership in a company. When a company lists on a stock exchange like the <b>ASX</b>, anyone can buy and sell its shares through a broker (a platform like the ones in Resources).</p>
+      <p>The exchange matches buyers with sellers. The <b>price</b> you see is simply the last price two people agreed on. When more people want to buy than sell, the price rises, and when more want to sell, it falls. Over the long run, prices tend to follow what the companies earn. Day to day, they follow news, interest rates and mood.</p>
+      <ul><li><b>Market capitalisation</b> = share price × number of shares. It's how "big" a company is.</li>
+      <li>The ASX is open about 10am–4pm Sydney time on weekdays. This app records each day's closing price.</li></ul>`],
+    ['Indexes: the scoreboard', `
+      <p>An <b>index</b> tracks a group of shares as a single number. The <b>S&amp;P/ASX 200</b> follows Australia's 200 largest listed companies, the <b>S&amp;P 500</b> America's 500 largest, the <b>Nasdaq 100</b> its 100 largest non-financial companies (tech-heavy), and <b>MSCI World</b> large companies across developed countries.</p>
+      <p>When the news says "the market rose 1% today", it usually means an index did. You can't buy an index itself, but you can buy a fund that copies it. That's what most ETFs do.</p>`],
+    ['ETFs, and how your list fits together', `
+      <p>An <b>ETF (exchange traded fund)</b> is one investment that holds many shares. You buy and sell it on the ASX like a single share, and it gives you a slice of everything inside. You pay a yearly fee (the <b>management fee</b> or MER), taken out of the fund's value. Broad index ETFs often charge 0.03–0.2% a year, and thematic or active funds 0.5–1%+.</p>
+      <p>Your coaching list falls into a few groups:</p>
+      <ul>
+        <li><b>Broad "core" funds:</b> VAS (Australia), VGS (developed world ex-Australia), IVV / SPY / V500 (US S&amp;P 500), VTS (whole US market), NDQ (Nasdaq 100).</li>
+        <li><b>All-in-one:</b> VDHG holds a ready-made mix (roughly 90% shares, 10% bonds, Australian and international), rebalanced for you.</li>
+        <li><b>Thematic:</b> GXAI, SEMI, AINF, HACK, RBTZ focus on one industry (AI, chips, cybersecurity, robotics). They're more concentrated, so expect bigger swings both ways and higher fees.</li>
+        <li><b>Ethical / ESG:</b> VETH, GIVE, IESG, INES, FAIR, ERTH, VESG. See "Ethical investing" below.</li>
+      </ul>
+      <div class="callout"><b>Overlap check:</b> IVV, SPY and V500 all track the same S&amp;P 500 index, and VTS and NDQ hold many of the same big US companies. Buying several of these mostly doubles up rather than diversifies. Use <b>Charts → Compare</b> to see how closely their lines move together.</div>`],
+    ['How you make (or lose) money', `
+      <ul><li><b>Growth:</b> the unit price rises above what you paid. You only "lock in" a gain or loss when you sell.</li>
+      <li><b>Distributions:</b> ETFs pass on the dividends and interest they receive, usually quarterly or half-yearly. The price typically drops by about that amount on the <b>ex-date</b>, which is why the <b>Growth of $10,000</b> chart, which reinvests them, is the fairer comparison.</li>
+      <li><b>Franking credits:</b> Australian companies often pay dividends with tax already paid at the company level. Funds holding Australian shares (VAS, VETH…) pass these credits on, and they reduce your tax.</li>
+      <li><b>DRP:</b> a distribution reinvestment plan buys more units with your distributions instead of paying cash. It's still taxable income that year.</li></ul>`],
+    ['Risk, falls and time', `
+      <p>Share prices fall, sometimes a lot, and it's normal. A broad market dropping 10% happens every year or two on average, and 30%+ falls a few times a generation. The bigger risk for most people is selling in a panic during a fall, which turns a temporary drop into a permanent loss.</p>
+      ${fact}
+      <ul><li><b>Diversification</b> (owning many companies, industries and countries) reduces the damage any one company can do.</li>
+      <li><b>Time horizon</b> matters: money you need within ~5 years is usually kept somewhere that can't fall, like savings or an offset account.</li>
+      <li>On any chart in this app, check <b>Biggest fall</b> and <b>Volatility</b> as well as the return.</li></ul>`],
+    ['Regular investing (dollar-cost averaging)', `
+      <p>Putting in the same amount on a schedule means you automatically buy more units when prices are low and fewer when they're high, and it takes the "when should I buy?" guesswork out. Historically, investing a lump sum straight away has come out ahead more often than not (markets rise more often than they fall), but regular investing is how most people invest from their pay, and it's easier to stick with. Try both in the calculator above.</p>
+      <p>Watch the <b>brokerage</b>: a $5 fee on a $100 purchase is 5% gone on day one, while on $1,000 it's 0.5%. Some platforms offer cheap or free auto-invest.</p>`],
+    ['Costs to keep an eye on', `
+      <ul><li><b>Brokerage:</b> the fee per trade. Record it in each purchase, because it forms part of your cost base for tax.</li>
+      <li><b>Management fee (MER):</b> the yearly percentage the fund charges. Small differences compound over decades.</li>
+      <li><b>Spread:</b> the gap between buy and sell prices. It's small for big ETFs and wider for small ones or right at market open and close.</li>
+      <li><b>US-domiciled funds</b> (for example VTS, and SPY's ASX listing) may need a <b>W-8BEN</b> form so less US tax is withheld from distributions. Your platform will usually prompt you, and their estate and tax handling differs from Australian funds.</li></ul>`],
+    ['Choosing a platform', `
+      <p>The platforms from your email differ mainly in fees, what you can buy and <b>how you own the shares</b>:</p>
+      <ul><li><b>CHESS-sponsored:</b> shares are registered in your name with your own HIN (Holder Identification Number). You can move them between brokers.</li>
+      <li><b>Custodial:</b> the platform (or its custodian) holds the shares on your behalf. It's often cheaper and allows fractional units, but moving them elsewhere can mean selling.</li></ul>
+      <p>Check each platform's current terms, because they change.</p>`],
+    ['Tax: capital gains (CGT) basics', `
+      <ul><li>Selling (or otherwise disposing of) units is a <b>CGT event</b>. Your gain is the sale proceeds minus the <b>cost base</b> (price paid plus brokerage, adjusted by items on your annual tax statement).</li>
+      <li>If you're an individual and held the units for <b>more than 12 months</b>, you can usually reduce the gain by <b>50%</b> (after subtracting losses). The <b>Parcels</b> table on the Holdings tab counts the days.</li>
+      <li>Capital <b>losses</b> offset gains and can be carried forward, but not against your salary.</li>
+      <li>Distributions are taxable in the year they're paid, even if reinvested. Your fund sends an <b>annual tax statement</b> (AMMA/AMIT) after 30 June.</li>
+      <li>Keep records of every buy and sell. That's what the Purchases tab in your sheet is for.</li></ul>
+      <p class="small muted">General information only. See the ATO's capital gains tax pages (in Resources) or a registered tax agent for your situation.</p>`],
+    ['Super: the other investment you already have', `
+      <p>Your super fund is invested in the same markets, usually in a "balanced" or "growth" option, so it counts as part of your overall investing.</p>
+      <ul><li><b>Concessional (before-tax) contributions</b> (your employer's Super Guarantee, salary sacrifice, and personal contributions you claim a deduction for) are taxed at 15% in the fund instead of at your marginal rate. They're capped each year: <b>$30,000 in 2025–26</b>, and reported as <b>$32,500 from 2026–27</b>. Confirm the current figure on the ATO page in Resources.</li>
+      <li><b>Carry-forward:</b> if your <b>total super balance</b> was under $500,000 on 30 June of the previous year, you can use unused cap amounts from up to five previous years. myGov → ATO → Super → Information shows both figures.</li>
+      <li>To claim a deduction for a personal contribution, you must lodge a <b>Notice of intent</b> with your fund and receive their acknowledgement <i>before</i> you lodge your tax return.</li>
+      <li>Super is generally locked away until you reach preservation age and retire, so it suits long-term money only.</li></ul>`],
+    ['Ethical investing', `
+      <p>"Ethical" and "ESG" funds screen companies in or out. <b>Negative screens</b> exclude industries such as fossil fuels, gambling, tobacco and weapons. <b>Positive screens</b> favour leaders on environmental, social or governance measures. There's no single standard, so two "ethical" funds can hold quite different things.</p>
+      <ul><li>Read each fund's exclusion list and its top 10 holdings on the issuer's site.</li>
+      <li>Screening can mean fewer companies and more concentration in some sectors (often tech and banks), so returns can differ noticeably from the broad market. Compare VETH with VAS, or VESG with VGS, in Charts.</li></ul>`],
+    ['Questions people often work through before investing', `
+      <p>Not advice, just the common order of thinking:</p>
+      <ol style="padding-left:18px"><li>Is there an emergency fund (often 3–6 months of expenses) in savings?</li>
+      <li>Is high-interest debt (credit cards, BNPL) paid off first? A guaranteed 20% saving beats an uncertain market return.</li>
+      <li>What's the money for, and when will it be needed?</li>
+      <li>How would you feel if it fell 30% next year? Would you hold, sell or buy more?</li>
+      <li>Keep it simple: a few broad funds are easier to understand and maintain than many overlapping ones.</li>
+      <li>Automate contributions, then review once or twice a year, not daily.</li></ol>`],
+    ['Glossary', `
+      <ul><li><b>ASX code / ticker:</b> the short code for an investment, e.g. VAS.</li>
+      <li><b>Bid / ask:</b> the highest price a buyer offers and the lowest price a seller accepts.</li>
+      <li><b>Bull / bear market:</b> a long rise, or a fall of about 20% or more.</li>
+      <li><b>CAGR:</b> compound annual growth rate, the steady yearly rate that gets you from start to end.</li>
+      <li><b>Ex-date:</b> you must own units <i>before</i> this date to receive the next distribution.</li>
+      <li><b>Market order / limit order:</b> buy at whatever the current price is, or only at your price or better.</li>
+      <li><b>NAV:</b> net asset value, what the fund's holdings are worth per unit. An ETF trades very close to it.</li>
+      <li><b>Rebalancing:</b> selling some of what has grown and buying what has lagged, to get back to your chosen mix.</li>
+      <li><b>Yield:</b> the past year's distributions divided by the price.</li></ul>`],
+  ];
+  $('learnBody').innerHTML = A.map(([t, b], i) => `<details${i === 0 ? ' open' : ''}><summary>${t}</summary><div class="body">${b}</div></details>`).join('');
+}
+
+/* ---------- Settings ---------- */
+function sheetIdFrom(v) { const m = String(v).match(/\/d\/([a-zA-Z0-9_-]{20,})/); return m ? m[1] : String(v).trim(); }
+function openSettings(msg) {
+  const f = $('setForm');
+  f.sheet.value = G.sheet() ? `https://docs.google.com/spreadsheets/d/${G.sheet()}/edit` : '';
+  f.client.value = G.clientId(); f.theme.value = store.get('inv_theme', '');
+  $('openSheet').href = f.sheet.value || 'https://sheets.google.com'; $('openSheet').hidden = !G.sheet();
+  if (msg) toast(msg, 5000);
+  $('setDlg').showModal();
+}
+$('setForm').addEventListener('submit', e => {
+  e.preventDefault(); const f = e.target;
+  const client = f.client.value.trim();
+  if (client && !/\.apps\.googleusercontent\.com$/.test(client)) { toast("That doesn't look like a Client ID"); return; }
+  if (client !== G.clientId()) G.setClientId(client);
+  const sid = sheetIdFrom(f.sheet.value);
+  const changed = sid !== G.sheet(); G.setSheet(sid);
+  store.set('inv_theme', f.theme.value); applyTheme();
+  $('setDlg').close();
+  if (changed) { store.del('inv_cache'); G.sheetIds = {}; }
+  if (client && sid) connect();
+});
+$('newSheet').addEventListener('click', async () => {
+  const client = $('setForm').client.value.trim();
+  if (client && client !== G.clientId()) G.setClientId(client);
+  if (!G.valid()) { toast('Sign in first: press Save with your Client ID, then try again.'); return; }
+  try {
+    const r = await G.api('', { method: 'POST', body: JSON.stringify({ properties: { title: 'Investment Tracker', locale: 'en_AU', timeZone: 'Australia/Melbourne' } }) });
+    G.setSheet(r.spreadsheetId); G.sheetIds = {}; store.del('inv_cache');
+    $('setDlg').close(); toast('Created "Investment Tracker" in your Google Drive'); refreshSheet();
+  } catch (err) { toast(err.message, 6000); }
+});
+function applyTheme() { const t = store.get('inv_theme', ''); if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; if (S.index) renderAll(); }
+
+/* ---------- Wiring ---------- */
+function showTab(name) {
+  document.querySelectorAll('nav.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === name));
+  document.querySelectorAll('section.tab').forEach(s => s.classList.toggle('on', s.id === 'tab-' + name));
+  store.set('inv_tab', name);
+  if (name === 'charts') renderChart();
+  if (name === 'holdings') renderHoldings();
+  if (name === 'learn') { renderDCA(); renderCompound(); }
+}
+document.querySelector('nav.tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) showTab(b.dataset.tab); });
+document.addEventListener('click', e => {
+  const close = e.target.closest('[data-close]'); if (close) { close.closest('dialog').close(); return; }
+  const ed = e.target.closest('[data-edit]'); if (ed) { e.stopPropagation(); openWatch(ed.dataset.edit); return; }
+  const tx = e.target.closest('[data-tx]'); if (tx) { openTx(+tx.dataset.tx); return; }
+  const rs = e.target.closest('[data-res]'); if (rs) { e.preventDefault(); openRes(+rs.dataset.res); return; }
+  const row = e.target.closest('tr[data-code]');
+  if (row && tick(row.dataset.code)) { S.chart.code = row.dataset.code; S.chart.compare = []; $('chTicker').value = row.dataset.code; showTab('charts'); }
+});
+['wlSearch', 'wlCat', 'wlStatus'].forEach(id => $(id).addEventListener('input', renderWatchlist));
+$('wlEth').addEventListener('click', e => { e.target.setAttribute('aria-pressed', e.target.getAttribute('aria-pressed') !== 'true'); renderWatchlist(); });
+$('wlAdd').addEventListener('click', () => openWatch(null));
+$('txAdd').addEventListener('click', () => openTx(null));
+$('resAdd').addEventListener('click', () => openRes(null));
+$('connectBtn').addEventListener('click', connect);
+$('settingsBtn').addEventListener('click', () => openSettings());
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => renderAll());
+
+function renderAll() {
+  fillTickerSelects();
+  renderOverview(); renderWatchlist(); renderResources();
+  const tab = document.querySelector('section.tab.on')?.id.replace('tab-', '');
+  if (tab === 'charts') renderChart();
+  if (tab === 'holdings') renderHoldings();
+  if (tab === 'learn') { renderDCA(); renderCompound(); }
+}
+
+(async () => {
+  applyTheme();
+  await loadIndex();
+  const cached = store.get('inv_cache', null);
+  if (cached) { try { parseSheet(cached); await loadHeldSeries(); } catch (e) { store.del('inv_cache'); } }
+  renderLearn();
+  renderAll();
+  const t = store.get('inv_tab', 'overview'); if ($('tab-' + t)) showTab(t);
+  loadGis().catch(() => {});
+  if (G.valid() && G.sheet()) refreshSheet(); else signedOut();
+})();
+</script>
+</body>
+</html>

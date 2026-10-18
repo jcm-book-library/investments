@@ -1,0 +1,62 @@
+name: Update prices
+
+on:
+  schedule:
+    # 6:20pm Melbourne on weekdays, after the ASX closes. GitHub runs cron in UTC,
+    # so it's listed for both AEDT (UTC+11) and AEST (UTC+10); the extra run is harmless.
+    - cron: "20 7,8 * * 1-5"
+  workflow_dispatch:           # "Run workflow" button: fetch now
+  push:                        # every push: run tests; on main also fetch and publish
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: prices
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run tests
+        run: python -m unittest discover -s tests
+      - name: Download prices
+        if: github.ref_name == github.event.repository.default_branch
+        run: python fetch_prices.py
+      - name: Save the new prices to the repo
+        if: github.ref_name == github.event.repository.default_branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then echo "No new prices"; exit 0; fi
+          git commit -m "Update prices $(date -u +%F)"
+          git push
+      - name: Assemble the site
+        if: github.ref_name == github.event.repository.default_branch
+        run: |
+          mkdir _site
+          cp -r index.html manifest.webmanifest icons data .nojekyll _site/
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref_name == github.event.repository.default_branch
+        with:
+          path: _site
+
+  publish:
+    needs: update
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

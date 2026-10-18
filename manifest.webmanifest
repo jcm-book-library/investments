@@ -1,0 +1,14 @@
+{
+  "name": "Compound",
+  "short_name": "Compound",
+  "description": "Investment watchlist, ETF price history, holdings and learning notes.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f1613",
+  "theme_color": "#0f1613",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
