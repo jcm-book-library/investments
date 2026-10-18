@@ -54,10 +54,10 @@ def fetch_chart(symbol, start):
     p1 = int(dt.datetime.fromisoformat(start).replace(tzinfo=dt.timezone.utc).timestamp())
     p2 = int(time.time()) + 86400
     last = None
-    for attempt, host in enumerate((1, 2, 1, 2)):
+    for attempt, host in enumerate((1, 2, 1)):
         url = CHART_URL.format(host=host, symbol=urllib.request.quote(symbol), start=p1, end=p2)
         try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers=HEADERS), timeout=30) as r:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=HEADERS), timeout=20) as r:
                 return json.load(r)
         except urllib.error.HTTPError as e:
             last = f"HTTP {e.code}"
@@ -65,7 +65,7 @@ def fetch_chart(symbol, start):
                 break  # unknown symbol: retrying won't help
         except Exception as e:  # network errors, timeouts, bad JSON
             last = str(e) or e.__class__.__name__
-        time.sleep(2 ** attempt)
+        time.sleep(2 + 2 * attempt)
     raise RuntimeError(last or "no response")
 
 
@@ -154,10 +154,13 @@ def run(config_path=ROOT / "tickers.toml", fetch=fetch_chart, today=None, data_d
     prices.mkdir(parents=True, exist_ok=True)
     index = {"updated": (today or dt.datetime.now(dt.timezone.utc)).isoformat(timespec="minutes"),
              "tickers": {}, "errors": {}}
+    misses = 0  # failures in a row; after three the source is treated as down for this run
     for it in items:
         path = prices / f"{it['code']}.json"
         stored = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
         try:
+            if misses >= 3:
+                raise RuntimeError("skipped: price source unreachable this run")
             fresh = parse_chart(fetch(it["symbol"], start))
             record = {
                 "code": it["code"], "symbol": it["symbol"],
@@ -169,9 +172,11 @@ def run(config_path=ROOT / "tickers.toml", fetch=fetch_chart, today=None, data_d
                 "dividends": [[d, a] for d, a in sorted(fresh["dividends"].items())] if fresh["dividends"] else stored.get("dividends", []),
             }
             path.write_text(json.dumps(record, separators=(",", ":")), encoding="utf-8")
+            misses = 0
             print(f"{it['code']:7} {len(record['closes']):5} days  last {record['closes'][-1] if record['closes'] else '-'}")
         except Exception as e:
             index["errors"][it["code"]] = str(e)
+            misses += 1
             print(f"{it['code']:7} FAILED: {e}", file=sys.stderr)
             record = stored
         if not record.get("closes"):
