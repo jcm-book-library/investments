@@ -1,0 +1,10 @@
+{
+  "name": "Compound",
+  "repo": "investments",
+  "purpose": "An investment watchlist with ETF price history, holdings and learning notes, backed by a private Google Sheet and prices saved in the repo.",
+  "family": "Finance",
+  "stage": "Working",
+  "live": "https://jcm-book-library.github.io/investments/",
+  "tags": [],
+  "updated": "2026-10-19"
+}
